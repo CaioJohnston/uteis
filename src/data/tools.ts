@@ -34,6 +34,7 @@ completo dos seus gastos por categoria, com totais e detalhamento de cada transa
     visibility: "public",
     hostingMode: "embedded",
     href: "/tools/gastometro",
+    githubUrl: "https://github.com/CaioJohnston/uteis",
     featured: true,
     createdAt: "2024-03-20",
   },

@@ -13,9 +13,6 @@ export function Footer() {
           >
             úteis<span className="text-gold">.</span>
           </Link>
-          <span className="text-xs font-mono text-paper/20">
-            {year} · feito à mão
-          </span>
         </div>
 
         <div className="flex items-center gap-5">
@@ -26,7 +23,7 @@ export function Footer() {
             ferramentas
           </Link>
           <a
-            href="https://github.com/seuusuario/toolhub"
+            href="https://github.com/CaioJohnston/uteis"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-mono text-paper/30 hover:text-paper/60 transition-colors"
