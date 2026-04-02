@@ -4,7 +4,7 @@ import { getFeaturedTools } from "@/data/tools";
 import { ToolCard } from "@/components/ToolCard";
 
 export const metadata: Metadata = {
-  title: "Início",
+  title: "útils.",
 };
 
 export default function HomePage() {
@@ -15,17 +15,12 @@ export default function HomePage() {
       {/* Hero */}
       <section className="py-20 md:py-28 border-b border-ink-border dark:border-ink-border">
         <div className="max-w-2xl">
-          <p className="font-mono text-xs text-gold mb-6 tracking-widest uppercase">
-            hub pessoal
-          </p>
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-light leading-none tracking-tight text-paper dark:text-paper mb-6 text-balance">
-            Ferramentas que uso.
-            <br />
-            <em className="text-gold">Que talvez você use também.</em>
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-light leading-none tracking-tight mb-6">
+            <span className="text-paper">úteis</span><span className="text-gold">.</span>
           </h1>
           <p className="text-base text-paper/50 dark:text-paper/50 leading-relaxed max-w-lg mt-6">
-            Uma coleção de mini aplicações, scripts convertidos em interfaces web e experimentos de IA.
-            Construídos para uso próprio. Compartilhados porque pode ser útil.
+            Uma coleção de aplicações, scripts, ferramentas e experimentos.
+            Construídos para uso próprio. Compartilhados porque podem ser <span className="text-paper">úteis</span><span className="text-gold">.</span>
           </p>
           <div className="flex items-center gap-4 mt-10">
             <Link

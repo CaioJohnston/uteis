@@ -32,7 +32,7 @@ function ThemeToggle() {
 }
 
 const navLinks = [
-  { href: "/", label: "Início" },
+  { href: "/", label: "Home" },
   { href: "/tools", label: "Ferramentas" },
 ];
 
@@ -47,7 +47,7 @@ export function Nav() {
           href="/"
           className="font-display text-xl font-medium tracking-tight text-paper dark:text-paper light:text-ink hover:text-gold transition-colors duration-200"
         >
-          úteis<span className="text-gold">.</span>
+          ú<span className="text-gold">.</span>
         </Link>
 
         {/* Nav links + toggle */}
