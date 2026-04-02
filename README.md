@@ -1,22 +1,19 @@
-# toolhub
+# úteis
 
-Hub pessoal de mini ferramentas, utilitários e experimentos.
+Hub pessoal de mini ferramentas, utilitários e experimentos de IA.
 
 **Stack:** Next.js 14 · TypeScript · Tailwind CSS · Vercel
+
+**Repo:** [github.com/CaioJohnston/uteis](https://github.com/CaioJohnston/uteis)
 
 ---
 
 ## Setup local
 
 ```bash
-# 1. Clonar o repositório
-git clone https://github.com/seuusuario/toolhub.git
-cd toolhub
-
-# 2. Instalar dependências
+git clone https://github.com/CaioJohnston/uteis.git
+cd uteis
 npm install
-
-# 3. Rodar em modo desenvolvimento
 npm run dev
 ```
 
@@ -24,72 +21,67 @@ Acesse `http://localhost:3000`.
 
 ---
 
-## Estrutura do projeto
+## Ferramentas disponíveis
 
-```
-src/
-  app/
-    page.tsx              # Home
-    tools/
-      page.tsx            # Catálogo completo
-      [slug]/page.tsx     # Página individual de cada ferramenta
-    layout.tsx            # Layout raiz (Nav, Footer, tema)
-    globals.css           # CSS global + variáveis
-  components/
-    Nav.tsx               # Navegação + toggle de tema
-    Footer.tsx
-    ToolCard.tsx          # Card do catálogo
-    ToolCatalog.tsx       # Grid com busca e filtro (client)
-    Providers.tsx         # next-themes provider
-  data/
-    tools.ts              # REGISTRY CENTRAL DE FERRAMENTAS
-  lib/
-    utils.ts              # cn(), formatDate()
-  types/
-    index.ts              # Tipos TypeScript
-```
+| Nome | Modo | Status |
+|---|---|---|
+| Gastometro | embedded | active |
 
 ---
 
-## Como adicionar uma nova ferramenta
+## Como adicionar uma ferramenta
 
-Edite `src/data/tools.ts` e insira um objeto no array `tools`:
+Edite `src/data/tools.ts` e insira um objeto no array `tools`. Cada ferramenta declara um `hostingMode`:
+
+### `embedded` — roda dentro do úteis
 
 ```ts
 {
-  id: "4",                          // incrementar
-  slug: "minha-ferramenta",         // usado na URL: /tools/minha-ferramenta
+  id: "4",
+  slug: "minha-ferramenta",
   name: "Minha Ferramenta",
   description: "Uma linha descrevendo o que faz.",
-  longDescription: `Descrição completa.
-Pode ter múltiplos parágrafos.
-
-**Seções** em negrito são suportadas.
-
-- item de lista
-- outro item`,
-  tags: ["produtividade", "texto"], // ver lista de tags disponíveis em src/types/index.ts
-  status: "active",                 // active | experimental | maintenance | archived
-  visibility: "public",             // public | internal
-  href: "/tools/minha-ferramenta",  // rota interna OU URL externa
-  githubUrl: "https://github.com/seuusuario/toolhub",
-  featured: false,                  // aparecer na home?
-  createdAt: "2024-06-01",
+  longDescription: `Descrição completa.`,
+  tags: ["utilidades"],
+  status: "active",
+  visibility: "public",
+  hostingMode: "embedded",
+  href: "/tools/minha-ferramenta",
+  featured: false,
+  createdAt: "2025-01-01",
 }
 ```
 
-Isso é suficiente para a ferramenta aparecer no catálogo, ter página própria e ser indexada pelo buscador.
+Crie também a interface em `src/app/tools/minha-ferramenta/page.tsx`.
 
-Se a ferramenta tiver uma interface própria, crie o arquivo:
+### `external` — redireciona para outro domínio
+
+```ts
+{
+  hostingMode: "external",
+  externalUrl: "https://meuapp.streamlit.app",
+  iframeEnabled: false,
+}
 ```
-src/app/tools/minha-ferramenta/page.tsx
+
+### `download` — o usuário baixa e roda localmente
+
+```ts
+{
+  hostingMode: "download",
+  downloadUrl: "https://github.com/CaioJohnston/uteis/releases/latest/download/script.zip",
+  downloadLabel: "Baixar script (.py)",
+  requirements: "Python 3.10+",
+}
 ```
+
+Para `external` e `download` a página de detalhe é gerada automaticamente. Nenhum outro arquivo precisa ser criado.
 
 ---
 
 ## Tags disponíveis
 
-`produtividade` `automação` `texto` `arquivos` `finanças` `segurança` `IA` `pesquisa` `devtools` `dados` `saúde` `utilidades`
+`produtividade` `automacao` `texto` `arquivos` `financas` `seguranca` `IA` `pesquisa` `devtools` `dados` `saude` `utilidades`
 
 Para adicionar uma nova tag, edite o tipo `ToolTag` em `src/types/index.ts`.
 
@@ -99,74 +91,27 @@ Para adicionar uma nova tag, edite o tipo `ToolTag` em `src/types/index.ts`.
 
 | Status | Significado |
 |---|---|
-| `active` | Estável, em uso |
-| `experimental` | Funcional mas instável |
+| `active` | Estavel, em uso |
+| `experimental` | Funcional mas instavel |
 | `maintenance` | Temporariamente com problemas |
 | `archived` | Descontinuada, mantida por registro |
 
 ---
 
-## Deploy na Vercel (gratuito)
+## Deploy
 
-### Primeira vez
-
-1. Crie conta em [vercel.com](https://vercel.com) com sua conta GitHub
-2. Clique em **Add New Project**
-3. Importe o repositório `toolhub`
-4. Deixe as configurações padrão (Vercel detecta Next.js automaticamente)
-5. Clique em **Deploy**
-
-Pronto. A URL fica disponível em `seuusuario-toolhub.vercel.app`.
-
-### Domínio próprio (opcional, gratuito no plano Hobby)
-
-Em **Project Settings > Domains**, adicione seu domínio e configure o DNS conforme instrução da Vercel.
-
-### Deploy automático
-
-Todo `git push` na branch `main` dispara um deploy automático. Não precisa fazer nada manualmente.
+O site roda na Vercel com deploy automatico a cada push na `main`.
 
 ```bash
-# Publicar uma nova ferramenta
-git add src/data/tools.ts
-git commit -m "feat: adiciona ferramenta X"
-git push
+npm run build   # testa o build antes de subir
 ```
 
 ---
 
-## Personalização obrigatória
-
-Substitua nos arquivos abaixo:
-
-| Arquivo | O que trocar |
-|---|---|
-| `src/app/page.tsx` | `[seu nome]` na seção "Sobre" |
-| `src/components/Footer.tsx` | URL do GitHub |
-| `src/components/Nav.tsx` | URL do GitHub |
-| `src/app/layout.tsx` | `description` do metadata |
-| `src/data/tools.ts` | `githubUrl` de cada ferramenta |
-
----
-
-## Adicionar variável de ambiente (para tools com API)
-
-```bash
-# Localmente
-cp .env.example .env.local
-# Preencha as variáveis
-
-# Na Vercel: Project Settings > Environment Variables
-```
-
-Variáveis com prefixo `NEXT_PUBLIC_` ficam expostas no client. Chaves de API devem ficar sem esse prefixo e ser usadas apenas em Route Handlers (`src/app/api/`).
-
----
-
-## Comandos úteis
+## Comandos
 
 ```bash
 npm run dev      # desenvolvimento
-npm run build    # build de produção (testa erros antes do deploy)
+npm run build    # build de producao
 npm run lint     # lint
 ```
