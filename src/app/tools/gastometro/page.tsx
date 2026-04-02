@@ -159,7 +159,7 @@ function buildSummary(txs: Transaction[]): CategorySummary[] {
     cat.count++;
     cat.transactions.push(t);
   }
-  return [...map.values()].sort((a, b) => b.total - a.total);
+  return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
