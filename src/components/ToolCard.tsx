@@ -21,8 +21,14 @@ interface ToolCardProps {
   variant?: "default" | "featured";
 }
 
+const modeLabel: Record<import("@/types").HostingMode, string> = {
+  embedded: "usar →",
+  external: "abrir ↗",
+  download: "baixar ↓",
+};
+
 export function ToolCard({ tool, variant = "default" }: ToolCardProps) {
-  const href = tool.href ?? `/tools/${tool.slug}`;
+  const href = `/tools/${tool.slug}`;
   const isFeatured = variant === "featured";
 
   return (
@@ -83,7 +89,7 @@ export function ToolCard({ tool, variant = "default" }: ToolCardProps) {
           {formatDate(tool.createdAt)}
         </span>
         <span className="text-xs text-gold opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-mono">
-          abrir →
+          {modeLabel[tool.hostingMode]}
         </span>
       </div>
     </Link>

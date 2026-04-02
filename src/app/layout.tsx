@@ -6,15 +6,15 @@ import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: {
-    default: "ToolHub — Ferramentas pessoais",
-    template: "%s | ToolHub",
+    default: "úteis — ferramentas pessoais",
+    template: "%s | úteis",
   },
   description:
     "Coleção de mini ferramentas, scripts utilitários e experimentos de IA construídos para uso pessoal e compartilhados com amigos.",
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "ToolHub",
+    siteName: "úteis",
   },
 };
 

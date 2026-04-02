@@ -35,7 +35,7 @@ export default function HomePage() {
               Ver ferramentas
             </Link>
             <a
-              href="https://github.com/seuusuario"
+              href="https://github.com/CaioJohnston/uteis"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-mono text-paper/40 dark:text-paper/40 hover:text-paper/80 transition-colors duration-200"
@@ -80,7 +80,7 @@ export default function HomePage() {
           </p>
           <p className="text-xs font-mono text-paper/30 mt-4">
             {/* Substitua com seu nome e contexto */}
-            Feito por [seu nome] · Belém, Brasil
+            Caio Johnston · Brasil
           </p>
         </div>
       </section>
