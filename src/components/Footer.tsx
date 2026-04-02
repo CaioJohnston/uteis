@@ -23,7 +23,7 @@ export function Footer() {
             ferramentas
           </Link>
           <a
-            href="https://github.com/CaioJohnston/uteis"
+            href="https://github.com/CaioJohnston"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-mono text-paper/30 hover:text-paper/60 transition-colors"

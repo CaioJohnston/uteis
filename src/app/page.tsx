@@ -80,7 +80,7 @@ export default function HomePage() {
           </p>
           <p className="text-xs font-mono text-paper/30 mt-4">
             {/* Substitua com seu nome e contexto */}
-            Caio Johnstonm · Brasil
+            Caio Johnston · Brasil
           </p>
         </div>
       </section>
