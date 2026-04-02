@@ -41,6 +41,7 @@ export interface Tool {
 
   // comum
   githubUrl?: string;
+  version?: string;
   featured?: boolean;
   createdAt: string;
 }

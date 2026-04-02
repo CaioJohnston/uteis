@@ -10,7 +10,7 @@ export const tools: Tool[] = [
     id: "3",
     slug: "gastometro",
     name: "Gastômetro",
-    description: "Importe o CSV do Nubank e veja seus gastos organizados por categoria.",
+    description: "Importe o CSV do Nubank e veja seus gastos organizados por categoria. Por enquanto só Nubank.",
     longDescription: `Faça o upload do CSV exportado pelo Nubank e obtenha um breakdown
 completo dos seus gastos por categoria, com totais e detalhamento de cada transação.
 
@@ -26,17 +26,16 @@ completo dos seus gastos por categoria, com totais e detalhamento de cada transa
 - Contas (energia, internet…)
 - Outros
 
-**Como exportar:** Nubank → Perfil → Meus dados → Exportar CSV da fatura.
-
 **Privacidade:** tudo processado localmente, nenhum dado sai do navegador.`,
     tags: ["finanças", "dados", "utilidades"],
     status: "active",
     visibility: "public",
     hostingMode: "embedded",
-    href: "/tools/gastometro",
+    href: "/tools/gastometro/usar",
     githubUrl: "https://github.com/CaioJohnston/uteis",
+    version: "0.1",
     featured: true,
-    createdAt: "2024-03-20",
+    createdAt: "2026-04-02",
   },
 ];
 

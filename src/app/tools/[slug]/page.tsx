@@ -203,6 +203,12 @@ export default function ToolPage({ params }: Props) {
               <span className="font-mono text-paper/30">publicado</span>
               <span className="font-mono text-paper/60">{formatDate(tool.createdAt)}</span>
             </div>
+            {tool.version && (
+              <div className="flex justify-between text-xs">
+                <span className="font-mono text-paper/30">versão</span>
+                <span className="font-mono text-paper/60">{tool.version}</span>
+              </div>
+            )}
             <div className="flex justify-between text-xs">
               <span className="font-mono text-paper/30">status</span>
               <span className="font-mono text-paper/60">{statusLabel[tool.status]}</span>

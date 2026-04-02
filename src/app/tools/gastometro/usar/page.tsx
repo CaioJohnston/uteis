@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface Transaction {
   date: string;
@@ -20,7 +20,7 @@ interface CategorySummary {
   transactions: Transaction[];
 }
 
-// ─── Category rules (ordem importa: mais específico primeiro) ─────────────────
+// Category rules (ordem importa: mais específico primeiro)
 
 const CATEGORY_RULES: Array<{ name: string; keywords: string[] }> = [
   {
@@ -71,7 +71,7 @@ function categorize(title: string): string {
   return "Outros";
 }
 
-// ─── CSV Parsing ──────────────────────────────────────────────────────────────
+// CSV Parsing
 
 function parseCsvLine(line: string): string[] {
   const result: string[] = [];
@@ -123,7 +123,6 @@ function parseNubankCsv(text: string): Transaction[] {
     const title = cols[titleIdx] ?? "";
     const amount = parseFloat((cols[amountIdx] ?? "0").replace(",", "."));
 
-    // No Nubank, valores positivos são despesas
     if (isNaN(amount) || amount <= 0) continue;
 
     transactions.push({ date, title, amount, category: categorize(title) });
@@ -136,7 +135,7 @@ function parseNubankCsv(text: string): Transaction[] {
   return transactions;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -162,9 +161,9 @@ function buildSummary(txs: Transaction[]): CategorySummary[] {
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// Page
 
-export default function GastometroPage() {
+export default function GastometroUsarPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -222,63 +221,18 @@ export default function GastometroPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
       <Link
-        href="/tools"
+        href="/tools/gastometro"
         className="inline-flex items-center gap-2 text-xs font-mono text-paper/30 hover:text-gold transition-colors duration-200 mb-12"
       >
-        ← ferramentas
+        ← Gastômetro
       </Link>
-
-      <div className="mb-8">
-        <h1 className="font-display text-4xl md:text-5xl font-light text-paper mb-3">
-          Gastômetro
-        </h1>
-        <p className="text-sm text-paper/50">
-          Importe o CSV do Nubank e veja seus gastos organizados por categoria.
-          Tudo processado localmente, nenhum dado sai do navegador.
-        </p>
-      </div>
 
       <span className="gold-rule mb-10 block" />
 
-      {/* Texto explicativo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-px border border-ink-border mb-10">
-        <div className="p-5 bg-ink-surface">
-          <p className="text-xs font-mono text-gold uppercase tracking-widest mb-2">
-            O que faz
-          </p>
-          <p className="text-sm text-paper/60 leading-relaxed">
-            Lê o CSV da sua fatura do Nubank e agrupa cada transação por categoria
-            (delivery, transporte, entretenimento e mais), mostrando quanto você gastou
-            em cada uma com o detalhamento completo.
-          </p>
-        </div>
-        <div className="p-5 bg-ink-surface">
-          <p className="text-xs font-mono text-gold uppercase tracking-widest mb-2">
-            Como usar
-          </p>
-          <p className="text-sm text-paper/60 leading-relaxed">
-            Cole aqui sua fatura no formato <span className="text-paper/80">.csv</span>.
-          </p>
-        </div>
-        <div className="p-5 bg-ink-surface">
-          <p className="text-xs font-mono text-gold uppercase tracking-widest mb-2">
-            Versão 0.1
-          </p>
-          <p className="text-sm text-paper/60 leading-relaxed">
-            Por enquanto só o formato CSV do Nubank é suportado. Outros bancos
-            e formatos (OFX, PDF) estão no radar para versões futuras.
-          </p>
-        </div>
-      </div>
-
       {transactions.length === 0 ? (
-        /* Drop zone */
         <div className="space-y-4">
           <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileRef.current?.click()}
@@ -289,15 +243,14 @@ export default function GastometroPage() {
                 : "border-ink-border hover:border-paper/20"
             )}
           >
-            <span className="text-4xl font-mono text-paper/20 select-none leading-none">
-              ↑
-            </span>
+            <span className="text-4xl font-mono text-paper/20 select-none leading-none">↑</span>
             <div className="text-center space-y-1.5">
               <p className="text-sm text-paper/60">
                 Arraste o CSV aqui ou{" "}
-                <span className="text-gold underline underline-offset-2">
-                  clique para selecionar
-                </span>
+                <span className="text-gold underline underline-offset-2">clique para selecionar</span>
+              </p>
+              <p className="text-xs font-mono text-paper/30">
+                Nubank: Perfil &rarr; Meus dados &rarr; Exportar CSV da fatura
               </p>
             </div>
           </div>
@@ -306,10 +259,7 @@ export default function GastometroPage() {
             ref={fileRef}
             type="file"
             accept=".csv"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) process(file);
-            }}
+            onChange={(e) => { const file = e.target.files?.[0]; if (file) process(file); }}
             className="hidden"
           />
 
@@ -320,34 +270,20 @@ export default function GastometroPage() {
           )}
         </div>
       ) : (
-        /* ── Analysis view ── */
         <div className="space-y-6">
-          {/* Resumo geral */}
           <div className="border border-ink-border p-5 flex flex-wrap items-center justify-between gap-6">
             <div className="flex flex-wrap gap-8">
               <div>
-                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">
-                  total gasto
-                </p>
-                <p className="font-display text-3xl text-gold font-light">
-                  {formatBRL(total)}
-                </p>
+                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">total gasto</p>
+                <p className="font-display text-3xl text-gold font-light">{formatBRL(total)}</p>
               </div>
               <div>
-                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">
-                  transações
-                </p>
-                <p className="font-display text-3xl text-paper font-light">
-                  {transactions.length}
-                </p>
+                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">transações</p>
+                <p className="font-display text-3xl text-paper font-light">{transactions.length}</p>
               </div>
               <div>
-                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">
-                  período
-                </p>
-                <p className="font-display text-3xl text-paper font-light">
-                  {period}
-                </p>
+                <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-1">período</p>
+                <p className="font-display text-3xl text-paper font-light">{period}</p>
               </div>
             </div>
             <button
@@ -358,7 +294,6 @@ export default function GastometroPage() {
             </button>
           </div>
 
-          {/* Categorias */}
           <div className="space-y-px">
             {summary.map((cat) => {
               const pct = (cat.total / total) * 100;
@@ -367,7 +302,6 @@ export default function GastometroPage() {
 
               return (
                 <div key={cat.name} className="border border-ink-border overflow-hidden">
-                  {/* Linha da categoria */}
                   <button
                     onClick={() => setExpanded(isOpen ? null : cat.name)}
                     className="w-full px-5 py-4 text-left hover:bg-ink-muted/5 transition-colors"
@@ -378,51 +312,28 @@ export default function GastometroPage() {
                         <span className="text-xs font-mono text-paper/30">
                           {cat.count} {cat.count === 1 ? "item" : "itens"}
                         </span>
-                        <span className="text-xs font-mono text-paper/40">
-                          {pct.toFixed(1)}%
-                        </span>
-                        <span className="font-mono text-sm text-paper/80">
-                          {formatBRL(cat.total)}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-xs font-mono text-paper/30 transition-transform duration-200",
-                            isOpen && "rotate-180 inline-block"
-                          )}
-                        >
+                        <span className="text-xs font-mono text-paper/40">{pct.toFixed(1)}%</span>
+                        <span className="font-mono text-sm text-paper/80">{formatBRL(cat.total)}</span>
+                        <span className={cn("text-xs font-mono text-paper/30 transition-transform duration-200", isOpen && "rotate-180 inline-block")}>
                           ↓
                         </span>
                       </div>
                     </div>
-                    {/* Barra de proporção */}
                     <div className="h-px bg-ink-border overflow-hidden">
-                      <div
-                        className="h-full bg-gold/50 transition-all duration-700"
-                        style={{ width: `${barWidth}%` }}
-                      />
+                      <div className="h-full bg-gold/50 transition-all duration-700" style={{ width: `${barWidth}%` }} />
                     </div>
                   </button>
 
-                  {/* Transações da categoria */}
                   {isOpen && (
                     <div className="border-t border-ink-border divide-y divide-ink-border/40">
                       {cat.transactions
                         .slice()
                         .sort((a, b) => b.amount - a.amount)
                         .map((t, i) => (
-                          <div
-                            key={i}
-                            className="px-5 py-2.5 flex items-center gap-4"
-                          >
-                            <span className="text-xs font-mono text-paper/30 w-20 flex-shrink-0">
-                              {formatDate(t.date)}
-                            </span>
-                            <span className="text-sm text-paper/60 flex-1 truncate">
-                              {t.title}
-                            </span>
-                            <span className="font-mono text-sm text-paper/70 flex-shrink-0">
-                              {formatBRL(t.amount)}
-                            </span>
+                          <div key={i} className="px-5 py-2.5 flex items-center gap-4">
+                            <span className="text-xs font-mono text-paper/30 w-20 flex-shrink-0">{formatDate(t.date)}</span>
+                            <span className="text-sm text-paper/60 flex-1 truncate">{t.title}</span>
+                            <span className="font-mono text-sm text-paper/70 flex-shrink-0">{formatBRL(t.amount)}</span>
                           </div>
                         ))}
                     </div>
