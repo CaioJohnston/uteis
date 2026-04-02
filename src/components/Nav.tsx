@@ -47,7 +47,7 @@ export function Nav() {
           href="/"
           className="font-display text-xl font-medium tracking-tight text-paper dark:text-paper light:text-ink hover:text-gold transition-colors duration-200"
         >
-          toolhub<span className="text-gold">.</span>
+          úteis<span className="text-gold">.</span>
         </Link>
 
         {/* Nav links + toggle */}

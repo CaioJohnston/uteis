@@ -1,5 +1,6 @@
 export type ToolStatus = "active" | "maintenance" | "experimental" | "archived";
 export type ToolVisibility = "public" | "internal";
+export type HostingMode = "embedded" | "external" | "download";
 
 export type ToolTag =
   | "produtividade"
@@ -24,9 +25,22 @@ export interface Tool {
   tags: ToolTag[];
   status: ToolStatus;
   visibility: ToolVisibility;
-  href?: string;          // rota interna ex: /tools/nome ou URL externa
+  hostingMode: HostingMode;
+
+  // embedded: rota interna
+  href?: string;
+
+  // external: URL da ferramenta em outro domínio
+  externalUrl?: string;
+  iframeEnabled?: boolean;
+
+  // download: link direto para o arquivo ou release
+  downloadUrl?: string;
+  downloadLabel?: string;
+  requirements?: string;
+
+  // comum
   githubUrl?: string;
-  demoUrl?: string;
   featured?: boolean;
-  createdAt: string;      // ISO date string
+  createdAt: string;
 }

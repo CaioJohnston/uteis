@@ -35,7 +35,7 @@
   }
 
   .light ::selection {
-    @apply bg-gold/20 text-ink-DEFAULT;
+    @apply bg-gold/20 text-ink;
   }
 }
 

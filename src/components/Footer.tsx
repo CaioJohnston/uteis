@@ -11,7 +11,7 @@ export function Footer() {
             href="/"
             className="font-display text-sm text-paper/40 hover:text-gold transition-colors duration-200"
           >
-            toolhub<span className="text-gold">.</span>
+            úteis<span className="text-gold">.</span>
           </Link>
           <span className="text-xs font-mono text-paper/20">
             {year} · feito à mão

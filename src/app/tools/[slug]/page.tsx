@@ -138,26 +138,39 @@ export default function ToolPage({ params }: Props) {
             <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-4">
               Links
             </p>
-            {tool.demoUrl && (
-              <a
-                href={tool.demoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between w-full bg-gold text-ink-DEFAULT text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
-              >
-                Abrir demo
-                <span className="font-mono text-xs">↗</span>
-              </a>
-            )}
-            {tool.href && !tool.demoUrl && (
+
+            {tool.hostingMode === "embedded" && tool.href && (
               <Link
                 href={tool.href}
-                className="flex items-center justify-between w-full bg-gold text-ink-DEFAULT text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
+                className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
               >
                 Usar ferramenta
                 <span className="font-mono text-xs">→</span>
               </Link>
             )}
+
+            {tool.hostingMode === "external" && tool.externalUrl && (
+              <a
+                href={tool.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
+              >
+                Abrir ferramenta
+                <span className="font-mono text-xs">↗</span>
+              </a>
+            )}
+
+            {tool.hostingMode === "download" && tool.downloadUrl && (
+              <a
+                href={tool.downloadUrl}
+                className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
+              >
+                {tool.downloadLabel ?? "Baixar"}
+                <span className="font-mono text-xs">↓</span>
+              </a>
+            )}
+
             {tool.githubUrl && (
               <a
                 href={tool.githubUrl}
@@ -165,11 +178,21 @@ export default function ToolPage({ params }: Props) {
                 rel="noopener noreferrer"
                 className="flex items-center justify-between w-full border border-ink-border text-paper/60 text-sm font-sans px-4 py-2.5 hover:border-paper/30 hover:text-paper transition-colors"
               >
-                Código fonte
+                {tool.hostingMode === "embedded" ? "Repositório (espelho)" : "Código fonte"}
                 <span className="font-mono text-xs">↗</span>
               </a>
             )}
           </div>
+
+          {/* Requisitos (download only) */}
+          {tool.hostingMode === "download" && tool.requirements && (
+            <div className="border border-ink-border p-5">
+              <p className="text-xs font-mono text-paper/30 uppercase tracking-widest mb-3">
+                Requisitos
+              </p>
+              <p className="text-xs font-mono text-paper/60">{tool.requirements}</p>
+            </div>
+          )}
 
           {/* Metadados */}
           <div className="border border-ink-border p-5 space-y-3">
