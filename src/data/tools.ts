@@ -7,6 +7,54 @@ import type { Tool } from "@/types";
 
 export const tools: Tool[] = [
   {
+    id: "5",
+    slug: "hagr",
+    name: "HaGR",
+    description:
+      "Reconhecimento de gestos manuais em tempo real via câmera ou upload de imagem. Modelo treinado com o dataset HaGRID, interface web direta no navegador.",
+    longDescription: `Classifica gestos manuais usando um modelo de Deep Learning treinado sobre o **HaGRID** (Hand Gesture Recognition Image Dataset).
+
+**Modos de uso:**
+- **Câmera ao vivo** — classifica gestos em tempo real pela webcam
+- **Upload de imagem** — envie uma foto para reconhecimento estático
+- **Interface web** — sem instalação, roda direto no navegador
+
+**Stack:**
+- Keras para o modelo de classificação
+- Flask como servidor web
+- HaGRID como base de dados de treinamento
+
+> Projeto experimental. A acurácia varia conforme iluminação e enquadramento da mão.`,
+    tags: ["IA", "dados"],
+    status: "experimental",
+    visibility: "public",
+    hostingMode: "external",
+    externalUrl: "https://ha-gr.vercel.app",
+    iframeEnabled: true,
+    githubUrl: "https://github.com/CaioJohnston/HaGR",
+    featured: false,
+    createdAt: "2026-04-03",
+    i18n: {
+      en: {
+        description:
+          "Real-time hand gesture recognition via camera or image upload. Model trained on the HaGRID dataset, web interface runs directly in the browser.",
+        longDescription: `Classifies hand gestures using a Deep Learning model trained on the **HaGRID** (Hand Gesture Recognition Image Dataset).
+
+**Usage modes:**
+- **Live camera** — classifies gestures in real time via webcam
+- **Image upload** — send a photo for static recognition
+- **Web interface** — no installation, runs directly in the browser
+
+**Stack:**
+- Keras for the classification model
+- Flask as the web server
+- HaGRID as the training dataset
+
+> Experimental project. Accuracy varies with lighting conditions and hand framing.`,
+      },
+    },
+  },
+  {
     id: "4",
     slug: "saucerful",
     name: "Saucerful of Secrets",

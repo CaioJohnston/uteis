@@ -63,15 +63,25 @@ export function ToolSidebar({ tool }: { tool: Tool }) {
         )}
 
         {tool.hostingMode === "external" && tool.externalUrl && (
-          <a
-            href={tool.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
-          >
-            {t("open_tool")}
-            <span className="font-mono text-xs">↗</span>
-          </a>
+          tool.iframeEnabled ? (
+            <Link
+              href={`/tools/${tool.slug}/usar`}
+              className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
+            >
+              {t("open_tool")}
+              <span className="font-mono text-xs">→</span>
+            </Link>
+          ) : (
+            <a
+              href={tool.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between w-full bg-gold text-ink text-sm font-sans font-medium px-4 py-2.5 hover:bg-gold-light transition-colors"
+            >
+              {t("open_tool")}
+              <span className="font-mono text-xs">↗</span>
+            </a>
+          )
         )}
 
         {tool.hostingMode === "download" && tool.downloads && tool.downloads.length > 0 && (
