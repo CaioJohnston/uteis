@@ -173,6 +173,58 @@ export const tools: Tool[] = [
     },
   },
   {
+    id: "7",
+    slug: "silex",
+    name: "Sílex",
+    description:
+      "Gera nomes criativos para projetos com base no que você está construindo e no que te inspira.",
+    longDescription: `Descreva seu projeto e, opcionalmente, compartilhe referências pessoais — filmes, músicas, tecnologias, pessoas, qualquer coisa que te inspire.
+
+O modelo gera **8 nomes únicos**, cada um acompanhado da explicação da sua origem. A ideia é que o nome tenha personalidade e faça sentido para quem o criou — assim como *úteis* e o próprio *Sílex* foram nomeados.
+
+**O que você pode informar:**
+- Descrição do projeto (obrigatório)
+- Referências (filmes, músicas, livros, tecnologias…)
+- Idiomas que você gosta
+- Estilo / vibe estética
+
+**Cada nome gerado inclui:**
+- A origem da referência (música, conceito, idioma…)
+- O tom do nome em poucas palavras
+
+**Powered by Gemini Flash** — API gratuita do Google.`,
+    tags: ["devtools", "IA", "produtividade"],
+    status: "experimental",
+    visibility: "public",
+    hostingMode: "embedded",
+    href: "/tools/silex/usar",
+    githubUrl: "https://github.com/CaioJohnston/uteis",
+    featured: false,
+    createdAt: "2026-04-04",
+    i18n: {
+      en: {
+        name: "Sílex",
+        description:
+          "Generates creative project names based on what you're building and what inspires you.",
+        longDescription: `Describe your project and, optionally, share personal references — films, music, technologies, people, anything that inspires you.
+
+The model generates **8 unique names**, each with an explanation of its origin. The idea is that the name has personality and makes sense to its creator — just like *úteis* and *Sílex* itself were named.
+
+**What you can provide:**
+- Project description (required)
+- References (films, music, books, technologies…)
+- Languages you like
+- Style / aesthetic vibe
+
+**Each generated name includes:**
+- The origin of the reference (song, concept, language…)
+- The tone of the name in a few words
+
+**Powered by Gemini Flash** — Google's free API.`,
+      },
+    },
+  },
+  {
     id: "3",
     slug: "gastometro",
     name: "Gastômetro",
