@@ -17,7 +17,7 @@ function VolumeKnob({
   onChange: (v: number) => void;
   onToggleMute: () => void;
 }) {
-  const dragRef = useRef<{ startY: number; startVol: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startVol: number } | null>(null);
   const didDragRef = useRef(false);
   const displayVol = muted ? 0 : volume;
   const angle = MIN_ANGLE + displayVol * (MAX_ANGLE - MIN_ANGLE);
@@ -47,16 +47,16 @@ function VolumeKnob({
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     didDragRef.current = false;
-    dragRef.current = { startY: e.clientY, startVol: displayVol };
+    dragRef.current = { startX: e.clientX, startVol: displayVol };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (e: MouseEvent) => {
     if (!dragRef.current) return;
-    const dy = dragRef.current.startY - e.clientY;
-    if (Math.abs(dy) > 3) didDragRef.current = true;
-    const delta = dy / DRAG_SENSITIVITY;
+    const dx = e.clientX - dragRef.current.startX;
+    if (Math.abs(dx) > 3) didDragRef.current = true;
+    const delta = dx / DRAG_SENSITIVITY;
     const next = Math.min(1, Math.max(0, dragRef.current.startVol + delta));
     onChange(next);
   };
@@ -70,13 +70,13 @@ function VolumeKnob({
 
   const onTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
-    dragRef.current = { startY: e.touches[0].clientY, startVol: displayVol };
+    dragRef.current = { startX: e.touches[0].clientX, startVol: displayVol };
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!dragRef.current) return;
-    const dy = dragRef.current.startY - e.touches[0].clientY;
-    const delta = dy / DRAG_SENSITIVITY;
+    const dx = e.touches[0].clientX - dragRef.current.startX;
+    const delta = dx / DRAG_SENSITIVITY;
     const next = Math.min(1, Math.max(0, dragRef.current.startVol + delta));
     onChange(next);
   };
