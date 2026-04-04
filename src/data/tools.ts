@@ -8,8 +8,8 @@ import type { Tool } from "@/types";
 export const tools: Tool[] = [
   {
     id: "6",
-    slug: "viinee",
-    name: "Viinee",
+    slug: "tapicius",
+    name: "Tapicius",
     description:
       "AutoClicker para Windows com múltiplos pontos de clique, interface gráfica intuitiva e atalhos de teclado.",
     longDescription: `Um AutoClicker simples e eficiente para Windows, desenvolvido em Go com interface gráfica usando a biblioteca Walk.
@@ -33,12 +33,12 @@ export const tools: Tool[] = [
     downloads: [
       {
         os: "windows",
-        url: "https://github.com/CaioJohnston/viinee/releases/latest/download/viinee-windows-amd64.exe",
+        url: "https://github.com/CaioJohnston/tapicius/releases/latest/download/tapicius-windows-amd64.exe",
         label: "(.exe)",
       },
     ],
     requirements: "Windows 10+ (64-bit)",
-    githubUrl: "https://github.com/CaioJohnston/viinee",
+    githubUrl: "https://github.com/CaioJohnston/tapicius",
     version: "1.0.0",
     featured: true,
     createdAt: "2026-04-04",
