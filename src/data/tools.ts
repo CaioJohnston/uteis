@@ -8,8 +8,8 @@ import type { Tool } from "@/types";
 export const tools: Tool[] = [
   {
     id: "6",
-    slug: "viinee",
-    name: "Viinee",
+    slug: "tapicius",
+    name: "Tapicius",
     description:
       "AutoClicker para Windows com múltiplos pontos de clique, interface gráfica intuitiva e atalhos de teclado.",
     longDescription: `Um AutoClicker simples e eficiente para Windows, desenvolvido em Go com interface gráfica usando a biblioteca Walk.
@@ -33,15 +33,36 @@ export const tools: Tool[] = [
     downloads: [
       {
         os: "windows",
-        url: "https://github.com/CaioJohnston/viinee/releases/latest/download/viinee-windows-amd64.exe",
+        url: "https://github.com/CaioJohnston/tapicius/releases/latest/download/tapicius-windows-amd64.exe",
         label: "(.exe)",
       },
     ],
     requirements: "Windows 10+ (64-bit)",
-    githubUrl: "https://github.com/CaioJohnston/viinee",
+    githubUrl: "https://github.com/CaioJohnston/tapicius",
     version: "1.0.0",
     featured: true,
     createdAt: "2026-04-04",
+    i18n: {
+      en: {
+        description:
+          "AutoClicker for Windows with multiple click points, intuitive GUI and keyboard shortcuts.",
+        longDescription: `A simple and efficient AutoClicker for Windows, built in Go with a graphical interface using the Walk library.
+
+**Features:**
+- **Intuitive Interface** — friendly GUI built with Walk
+- **Multiple Click Points** — define as many click points as you need
+- **Configurable Interval** — adjust the time between clicks in milliseconds
+- **Keyboard Shortcut** — use F6 to start/stop quickly
+- **Visual Overlay** — overlay interface to help selecting click points
+- **Persistent Config** — your settings are saved automatically
+
+**Requirements:**
+- Windows 10 or higher
+
+> Ideal for automating repetitive tasks and UI testing.`,
+        requirements: "Windows 10+ (64-bit)",
+      },
+    },
   },
   {
     id: "5",
@@ -148,6 +169,58 @@ export const tools: Tool[] = [
 - **Portable** — single executable, runs from a USB drive
 
 **Warning:** has not undergone a professional security audit. If you forget the password, the data cannot be recovered — by design.`,
+      },
+    },
+  },
+  {
+    id: "7",
+    slug: "silex",
+    name: "Sílex",
+    description:
+      "Gera nomes criativos para projetos com base no que você está construindo e no que te inspira.",
+    longDescription: `Descreva seu projeto e, opcionalmente, compartilhe referências pessoais — filmes, músicas, tecnologias, pessoas, qualquer coisa que te inspire.
+
+O modelo gera **8 nomes únicos**, cada um acompanhado da explicação da sua origem. A ideia é que o nome tenha personalidade e faça sentido para quem o criou — assim como *úteis* e o próprio *Sílex* foram nomeados.
+
+**O que você pode informar:**
+- Descrição do projeto (obrigatório)
+- Referências (filmes, músicas, livros, tecnologias…)
+- Idiomas que você gosta
+- Estilo / vibe estética
+
+**Cada nome gerado inclui:**
+- A origem da referência (música, conceito, idioma…)
+- O tom do nome em poucas palavras
+
+**Powered by Gemini Flash** — API gratuita do Google.`,
+    tags: ["devtools", "IA", "produtividade"],
+    status: "experimental",
+    visibility: "public",
+    hostingMode: "embedded",
+    href: "/tools/silex/usar",
+    githubUrl: "https://github.com/CaioJohnston/uteis",
+    featured: false,
+    createdAt: "2026-04-04",
+    i18n: {
+      en: {
+        name: "Sílex",
+        description:
+          "Generates creative project names based on what you're building and what inspires you.",
+        longDescription: `Describe your project and, optionally, share personal references — films, music, technologies, people, anything that inspires you.
+
+The model generates **8 unique names**, each with an explanation of its origin. The idea is that the name has personality and makes sense to its creator — just like *úteis* and *Sílex* itself were named.
+
+**What you can provide:**
+- Project description (required)
+- References (films, music, books, technologies…)
+- Languages you like
+- Style / aesthetic vibe
+
+**Each generated name includes:**
+- The origin of the reference (song, concept, language…)
+- The tone of the name in a few words
+
+**Powered by Gemini Flash** — Google's free API.`,
       },
     },
   },
