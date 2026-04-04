@@ -42,6 +42,27 @@ export const tools: Tool[] = [
     version: "1.0.0",
     featured: true,
     createdAt: "2026-04-04",
+    i18n: {
+      en: {
+        description:
+          "AutoClicker for Windows with multiple click points, intuitive GUI and keyboard shortcuts.",
+        longDescription: `A simple and efficient AutoClicker for Windows, built in Go with a graphical interface using the Walk library.
+
+**Features:**
+- **Intuitive Interface** — friendly GUI built with Walk
+- **Multiple Click Points** — define as many click points as you need
+- **Configurable Interval** — adjust the time between clicks in milliseconds
+- **Keyboard Shortcut** — use F6 to start/stop quickly
+- **Visual Overlay** — overlay interface to help selecting click points
+- **Persistent Config** — your settings are saved automatically
+
+**Requirements:**
+- Windows 10 or higher
+
+> Ideal for automating repetitive tasks and UI testing.`,
+        requirements: "Windows 10+ (64-bit)",
+      },
+    },
   },
   {
     id: "5",
