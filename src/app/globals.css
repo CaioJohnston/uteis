@@ -2,17 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap');
-
-:root {
-  --font-cormorant: 'Cormorant', Georgia, serif;
-  --font-dm-sans: 'DM Sans', system-ui, sans-serif;
-  --font-jetbrains: 'JetBrains Mono', monospace;
-}
-
 @layer base {
   * {
-    @apply border-ink-border;
+    @apply border-paper-border dark:border-ink-border;
   }
 
   html {
@@ -22,20 +14,11 @@
   }
 
   body {
-    @apply bg-ink text-paper font-sans transition-colors duration-300;
-  }
-
-  .light body,
-  html.light body {
-    @apply bg-paper text-ink;
+    @apply bg-paper text-ink font-sans transition-colors duration-300 dark:bg-ink dark:text-paper;
   }
 
   ::selection {
-    @apply bg-gold/30 text-paper;
-  }
-
-  .light ::selection {
-    @apply bg-gold/20 text-ink;
+    @apply bg-gold/30 text-ink dark:text-paper;
   }
 }
 
@@ -44,26 +27,24 @@
     text-wrap: balance;
   }
 
-  /* Grid com número variável de colunas */
   .tool-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1px;
   }
 
-  /* Linha decorativa dourada */
   .gold-rule {
     @apply block h-px bg-gradient-to-r from-gold/60 via-gold/20 to-transparent;
   }
 
-  /* Status badges */
-  .badge-active       { @apply text-emerald-400 bg-emerald-400/10 border border-emerald-400/20; }
-  .badge-experimental { @apply text-amber-400 bg-amber-400/10 border border-amber-400/20; }
-  .badge-maintenance  { @apply text-orange-400 bg-orange-400/10 border border-orange-400/20; }
-  .badge-archived     { @apply text-paper-muted bg-ink-muted/30 border border-ink-muted/20; }
+  /* Status badges — light default, dark override */
+  .badge-active       { @apply text-emerald-600 bg-emerald-50 border border-emerald-200; }
+  .badge-experimental { @apply text-amber-600 bg-amber-50 border border-amber-200; }
+  .badge-maintenance  { @apply text-orange-600 bg-orange-50 border border-orange-200; }
+  .badge-archived     { @apply text-ink/40 bg-paper-surface border border-paper-border; }
 
-  .light .badge-active       { @apply text-emerald-700 bg-emerald-50 border-emerald-200; }
-  .light .badge-experimental { @apply text-amber-700 bg-amber-50 border-amber-200; }
-  .light .badge-maintenance  { @apply text-orange-700 bg-orange-50 border-orange-200; }
-  .light .badge-archived     { @apply text-paper-muted bg-paper-surface border-paper-border; }
+  .dark .badge-active       { @apply text-emerald-400 bg-emerald-400/10 border-emerald-400/20; }
+  .dark .badge-experimental { @apply text-amber-400 bg-amber-400/10 border-amber-400/20; }
+  .dark .badge-maintenance  { @apply text-orange-400 bg-orange-400/10 border-orange-400/20; }
+  .dark .badge-archived     { @apply text-paper-muted bg-ink-muted/30 border-ink-muted/20; }
 }

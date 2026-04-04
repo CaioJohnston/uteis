@@ -45,6 +45,26 @@ export const tools: Tool[] = [
     version: "3.0.0",
     featured: true,
     createdAt: "2026-04-02",
+    i18n: {
+      en: {
+        description:
+          "Portable file encryptor with a graphical interface. Protect any file with AES-256-GCM and a password, no installation, no internet, no dependencies.",
+        longDescription: `Built to live on a USB drive, external hard drive or any portable folder. Place the executable next to the files you want to protect and the vault is detected automatically.
+
+**Features:**
+- **Auto vault** — detects files in the executable's folder or in subfolders \`vault/\`, \`senhas/\`, \`secrets/\`
+- **Lock / Unlock All** — processes all vault files at once with a single password
+- **AES-256-GCM** — encryption with integrated authentication
+- **Argon2id** — key derivation resistant to GPU/ASIC attacks
+- **Integrity check** — SHA-256 hash embedded in each encrypted file
+- **Password strength meter** — real-time visual feedback
+- **Drag & Drop** — drag files directly into the window
+- **Session password** — remembers the password during the session for multiple files
+- **Portable** — single executable, runs from a USB drive
+
+**Warning:** has not undergone a professional security audit. If you forget the password, the data cannot be recovered — by design.`,
+      },
+    },
   },
   {
     id: "3",
@@ -76,6 +96,28 @@ export const tools: Tool[] = [
     version: "0.1.0",
     featured: true,
     createdAt: "2026-04-02",
+    i18n: {
+      en: {
+        name: "Gastômetro",
+        description:
+          "Import your Nubank CSV and see your expenses organized by category. Nubank only for now.",
+        longDescription: `Upload the CSV exported from Nubank and get a complete breakdown of your expenses by category, with totals and details for each transaction.
+
+**Automatically detected categories:**
+- Delivery (iFood, Rappi…)
+- Transport (Uber, 99…)
+- Restaurants
+- Entertainment (Netflix, Spotify…)
+- Subscriptions (GitHub, Notion…)
+- Shopping (Amazon, Mercado Livre…)
+- Health (pharmacies, drugstores…)
+- Education
+- Bills (electricity, internet…)
+- Other
+
+**Privacy:** everything is processed locally, no data leaves your browser.`,
+      },
+    },
   },
 ];
 

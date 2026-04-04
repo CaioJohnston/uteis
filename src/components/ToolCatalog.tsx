@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import type { Tool } from "@/types";
 import { ToolCard } from "@/components/ToolCard";
 import { cn } from "@/lib/utils";
+import { useLanguage, useTagLabel } from "@/contexts/language";
 
 interface ToolCatalogProps {
   tools: Tool[];
@@ -11,6 +12,8 @@ interface ToolCatalogProps {
 }
 
 export function ToolCatalog({ tools, allTags }: ToolCatalogProps) {
+  const { t } = useLanguage();
+  const tagLabel = useTagLabel();
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
@@ -20,32 +23,30 @@ export function ToolCatalog({ tools, allTags }: ToolCatalogProps) {
         !search ||
         tool.name.toLowerCase().includes(search.toLowerCase()) ||
         tool.description.toLowerCase().includes(search.toLowerCase());
-
       const matchesTag = !activeTag || tool.tags.includes(activeTag as Tool["tags"][number]);
-
       return matchesSearch && matchesTag;
     });
   }, [tools, search, activeTag]);
 
   return (
     <div>
-      {/* Busca */}
       <div className="mb-6">
         <input
           type="text"
-          placeholder="Buscar ferramenta..."
+          placeholder={t("search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={cn(
-            "w-full bg-ink-surface dark:bg-ink-surface border border-ink-border dark:border-ink-border",
-            "px-4 py-3 text-sm font-sans text-paper dark:text-paper placeholder-paper/30",
-            "focus:outline-none focus:border-gold/50 dark:focus:border-gold/50",
+            "w-full bg-paper-surface dark:bg-ink-surface",
+            "border border-paper-border dark:border-ink-border",
+            "px-4 py-3 text-sm font-sans text-ink dark:text-paper",
+            "placeholder-ink/30 dark:placeholder-paper/30",
+            "focus:outline-none focus:border-gold/50",
             "transition-colors duration-200"
           )}
         />
       </div>
 
-      {/* Filtro por tags */}
       <div className="flex flex-wrap gap-2 mb-8">
         <button
           onClick={() => setActiveTag(null)}
@@ -53,10 +54,10 @@ export function ToolCatalog({ tools, allTags }: ToolCatalogProps) {
             "text-xs font-mono px-3 py-1 border transition-colors duration-150",
             !activeTag
               ? "border-gold text-gold bg-gold/10"
-              : "border-ink-border text-paper/40 hover:border-paper/30 hover:text-paper/60"
+              : "border-paper-border dark:border-ink-border text-ink/40 dark:text-paper/40 hover:border-ink/30 dark:hover:border-paper/30 hover:text-ink/70 dark:hover:text-paper/60"
           )}
         >
-          todos
+          {t("filter_all")}
         </button>
         {allTags.map((tag) => (
           <button
@@ -66,30 +67,29 @@ export function ToolCatalog({ tools, allTags }: ToolCatalogProps) {
               "text-xs font-mono px-3 py-1 border transition-colors duration-150",
               activeTag === tag
                 ? "border-gold text-gold bg-gold/10"
-                : "border-ink-border text-paper/40 hover:border-paper/30 hover:text-paper/60"
+                : "border-paper-border dark:border-ink-border text-ink/40 dark:text-paper/40 hover:border-ink/30 dark:hover:border-paper/30 hover:text-ink/70 dark:hover:text-paper/60"
             )}
           >
-            {tag}
+            {tagLabel(tag)}
           </button>
         ))}
       </div>
 
-      {/* Grid */}
       {filtered.length > 0 ? (
-        <div className="tool-grid border border-ink-border dark:border-ink-border">
+        <div className="tool-grid border border-paper-border dark:border-ink-border">
           {filtered.map((tool) => (
             <ToolCard key={tool.id} tool={tool} />
           ))}
         </div>
       ) : (
-        <p className="text-center py-16 text-paper/30 font-mono text-sm">
-          nenhuma ferramenta encontrada.
+        <p className="text-center py-16 text-ink/30 dark:text-paper/30 font-mono text-sm">
+          {t("no_results")}
         </p>
       )}
 
-      {/* Contador */}
-      <p className="mt-4 text-xs font-mono text-paper/30 dark:text-paper/30 text-right">
-        {filtered.length} de {tools.length} ferramentas
+      <p className="mt-4 text-xs font-mono text-ink/30 dark:text-paper/30 text-right">
+        {filtered.length} {t("tools_of")} {tools.length}{" "}
+        {tools.length === 1 ? t("tool_singular") : t("tool_plural")}
       </p>
     </div>
   );

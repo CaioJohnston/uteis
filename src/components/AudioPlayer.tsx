@@ -145,7 +145,7 @@ function VolumeKnob({
         <circle cx="0" cy="0" r="2" fill="rgba(201,147,58,0.3)" />
       </svg>
 
-      <span className="text-xs font-mono text-paper/25 -mt-1">volume</span>
+      <span className="text-xs font-mono text-ink/25 dark:text-paper/25 -mt-1">volume</span>
     </div>
   );
 }
@@ -213,13 +213,13 @@ export function AudioPlayer({ src }: { src: string }) {
 
       {/* Barra de progresso */}
       <div className="flex-1 space-y-1.5">
-        <div className="w-full h-px bg-ink-border relative">
+        <div className="w-full h-px bg-paper-border dark:bg-ink-border relative">
           <div
             className="absolute top-0 left-0 h-full bg-gold/50 transition-all duration-100"
             style={{ width: `${progress * 100}%` }}
           />
         </div>
-        <p className="text-xs font-mono text-paper/20">
+        <p className="text-xs font-mono text-ink/20 dark:text-paper/20">
           {muted ? "muted" : "playing"}
         </p>
       </div>

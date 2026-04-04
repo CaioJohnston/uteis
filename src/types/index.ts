@@ -51,6 +51,16 @@ export interface Tool {
   audioUrl?: string;
   audioCredit?: string;
 
+  // i18n
+  i18n?: {
+    en?: {
+      name?: string;
+      description?: string;
+      longDescription?: string;
+      requirements?: string;
+    };
+  };
+
   // comum
   githubUrl?: string;
   version?: string;
