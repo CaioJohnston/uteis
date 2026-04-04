@@ -7,6 +7,43 @@ import type { Tool } from "@/types";
 
 export const tools: Tool[] = [
   {
+    id: "6",
+    slug: "viinee",
+    name: "Viinee",
+    description:
+      "AutoClicker para Windows com múltiplos pontos de clique, interface gráfica intuitiva e atalhos de teclado.",
+    longDescription: `Um AutoClicker simples e eficiente para Windows, desenvolvido em Go com interface gráfica usando a biblioteca Walk.
+
+**Recursos:**
+- **Interface Intuitiva** — interface gráfica amigável construída com Walk
+- **Múltiplos Pontos de Clique** — defina quantos pontos de clique precisar
+- **Intervalo Configurável** — ajuste o tempo entre cliques em milissegundos
+- **Atalho de Teclado** — use F6 para iniciar/parar rapidamente
+- **Sobreposição Visual** — interface de sobreposição para facilitar a seleção dos pontos
+- **Configuração Persistente** — suas configurações são salvas automaticamente
+
+**Requisitos:**
+- Windows 10 ou superior
+
+> Ideal para automação de tarefas repetitivas e testes de interface.`,
+    tags: ["automação", "utilidades"],
+    status: "active",
+    visibility: "public",
+    hostingMode: "download",
+    downloads: [
+      {
+        os: "windows",
+        url: "https://github.com/CaioJohnston/viinee/releases/latest/download/viinee-windows-amd64.exe",
+        label: "(.exe)",
+      },
+    ],
+    requirements: "Windows 10+ (64-bit)",
+    githubUrl: "https://github.com/CaioJohnston/viinee",
+    version: "1.0.0",
+    featured: true,
+    createdAt: "2026-04-04",
+  },
+  {
     id: "5",
     slug: "hagr",
     name: "HaGR",
