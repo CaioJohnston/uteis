@@ -7,6 +7,58 @@ import type { Tool } from "@/types";
 
 export const tools: Tool[] = [
   {
+    id: "8",
+    slug: "open-u",
+    name: "Open ú.",
+    description:
+      "Interface de chat com IA configurável. Conecte sua própria API (OpenAI, Anthropic, ou custom) e converse com documentos.",
+    longDescription: `O **Open ú.** é um chatbot 100% client-side que permite conectar sua própria API de IA e conversar com modelos de linguagem diretamente no navegador.
+
+**Recursos:**
+- **Conexão flexível** — suporta OpenAI, Anthropic, ou qualquer endpoint compatível com OpenAI
+- **Configuração completa** — ajuste temperature, max tokens, top-p, e system prompt
+- **Upload de documentos** — anexe PDF, TXT, ou DOCX para usar como contexto na conversa
+- **Privacidade total** — suas credenciais nunca saem do seu navegador
+- **Streaming em tempo real** — respostas aparecem conforme são geradas
+
+**Como usar:**
+1. Configure sua API Key e endpoint nas configurações
+2. (Opcional) Faça upload de documentos para contexto
+3. Comece a conversar
+
+**Segurança:** todas as credenciais são armazenadas apenas no localStorage do seu navegador e nunca são transmitidas para nenhum servidor.`,
+    tags: ["IA", "produtividade", "texto"],
+    status: "active",
+    visibility: "public",
+    hostingMode: "embedded",
+    href: "/tools/open-u/usar",
+    githubUrl: "https://github.com/CaioJohnston/uteis",
+    featured: true,
+    createdAt: "2026-04-06",
+    i18n: {
+      en: {
+        name: "Open ú.",
+        description:
+          "Configurable AI chat interface. Connect your own API (OpenAI, Anthropic, or custom) and chat with documents.",
+        longDescription: `The **Open ú.** is a 100% client-side chatbot that lets you connect your own AI API and chat with language models directly in the browser.
+
+**Features:**
+- **Flexible connection** — supports OpenAI, Anthropic, or any OpenAI-compatible endpoint
+- **Full configuration** — adjust temperature, max tokens, top-p, and system prompt
+- **Document upload** — attach PDF, TXT, or DOCX to use as context in the conversation
+- **Total privacy** — your credentials never leave your browser
+- **Real-time streaming** — responses appear as they are generated
+
+**How to use:**
+1. Configure your API Key and endpoint in settings
+2. (Optional) Upload documents for context
+3. Start chatting
+
+**Security:** all credentials are stored only in your browser's localStorage and are never transmitted to any server.`,
+      },
+    },
+  },
+  {
     id: "6",
     slug: "tapicius",
     name: "Tapicius",
