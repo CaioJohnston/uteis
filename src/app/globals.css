@@ -8,6 +8,13 @@
   --font-cormorant: 'Cormorant', Georgia, serif;
   --font-manrope: 'Manrope', system-ui, sans-serif;
   --font-jetbrains: 'JetBrains Mono', monospace;
+
+  /* Gold/orange — mais forte no light mode para manter contraste com fundo claro */
+  --gold: 217 107 40; /* #d96b28 */
+}
+
+.dark {
+  --gold: 194 101 42; /* #c2652a */
 }
 
 @layer base {

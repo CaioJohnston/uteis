@@ -103,7 +103,7 @@ function buildIndices(): Uint16Array {
 const HOLD  = 2.5;  // seconds each shape is held
 const MORPH = 2.2;  // seconds for vertex morph
 const GOLD_DARK  = "#c2652a";
-const GOLD_LIGHT = "#9a4918";
+const GOLD_LIGHT = "#c2652a";
 const SHAPES: ShapeKey[] = ["sphere", "torus", "octa"];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -149,8 +149,12 @@ export function MeshAnimation() {
     geo.setAttribute("position", posAttr);
     geo.setIndex(new THREE.BufferAttribute(indices, 1));
 
+    // Read the active theme directly from the <html> class — next-themes sets
+    // this synchronously before hydration, so it's always accurate here even
+    // when resolvedTheme is still undefined on first render.
+    const isDark = document.documentElement.classList.contains("dark");
     const material = new THREE.MeshBasicMaterial({
-      color: resolvedTheme === "light" ? GOLD_LIGHT : GOLD_DARK,
+      color: isDark ? GOLD_DARK : GOLD_LIGHT,
       wireframe: true,
     });
     materialRef.current = material;
