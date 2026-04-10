@@ -7,7 +7,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         display: ["var(--font-cormorant)", "Georgia", "serif"],
-        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
         mono: ["var(--font-jetbrains)", "monospace"],
       },
       colors: {
@@ -26,9 +26,9 @@ const config: Config = {
           muted: "#a8a49c",
         },
         gold: {
-          DEFAULT: "#c9933a",
-          light: "#e8b86d",
-          dark: "#a3721e",
+          DEFAULT: "#c2652a",
+          light: "#d9885a",
+          dark: "#9a4918",
         },
       },
       animation: {
