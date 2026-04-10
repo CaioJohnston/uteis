@@ -26,7 +26,7 @@ const config: Config = {
           muted: "#a8a49c",
         },
         gold: {
-          DEFAULT: "#c2652a",
+          DEFAULT: "rgb(var(--gold) / <alpha-value>)",
           light: "#d9885a",
           dark: "#9a4918",
         },

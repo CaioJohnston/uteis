@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80">
+  <text
+    x="150"
+    y="56"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="58"
+    font-weight="400"
+    letter-spacing="-1"
+    fill="#0c0b0a"
+  >úteis<tspan fill="#d96b28">.</tspan></text>
+</svg>
