@@ -21,7 +21,9 @@ export type ToolTag =
   | "devtools"
   | "dados"
   | "saúde"
-  | "utilidades";
+  | "utilidades"
+  | "gaming"
+  | "infra";
 
 export interface Tool {
   id: string;

@@ -7,6 +7,66 @@ import type { Tool } from "@/types";
 
 export const tools: Tool[] = [
   {
+    id: "9",
+    slug: "minehost",
+    name: "MineHost",
+    description:
+      "Crie e gerencie um servidor Minecraft via GitHub Codespaces. Suporta Vanilla, Paper, Fabric e Forge. Console em tempo real no navegador.",
+    longDescription: `O **MineHost** permite criar e controlar um servidor Minecraft usando GitHub Codespaces como infraestrutura — sem VPS, sem configuração de rede, sem cliente de SSH.
+
+**Como funciona:**
+1. Autentique com sua conta GitHub
+2. Escolha o tipo de máquina (2 ou 4 núcleos)
+3. Configure o tipo de servidor e versão
+4. O Codespace inicializa, baixa o JAR e sobe o servidor automaticamente
+5. Console em tempo real diretamente no navegador
+
+**Tipos de servidor suportados:**
+- **Vanilla** — servidor oficial da Mojang
+- **Paper** — fork otimizado para performance
+- **Fabric** — plataforma de mods leve
+- **Forge** — plataforma de mods clássica
+
+**Requisitos:**
+- Conta GitHub com acesso a Codespaces (plano gratuito inclui 60h/mês)
+
+> O servidor fica na sua conta GitHub. Você controla tudo.`,
+    tags: ["gaming", "infra", "devtools"],
+    status: "experimental",
+    visibility: "public",
+    hostingMode: "embedded",
+    href: "/tools/minehost/usar",
+    githubUrl: "https://github.com/CaioJohnston/minecraft-server-template",
+    featured: true,
+    createdAt: "2026-05-02",
+    i18n: {
+      en: {
+        name: "MineHost",
+        description:
+          "Create and manage a Minecraft server via GitHub Codespaces. Supports Vanilla, Paper, Fabric and Forge. Real-time console in the browser.",
+        longDescription: `**MineHost** lets you create and control a Minecraft server using GitHub Codespaces as infrastructure — no VPS, no network config, no SSH client.
+
+**How it works:**
+1. Authenticate with your GitHub account
+2. Choose machine type (2 or 4 cores)
+3. Configure server type and version
+4. The Codespace initializes, downloads the JAR and starts the server automatically
+5. Real-time console directly in the browser
+
+**Supported server types:**
+- **Vanilla** — official Mojang server
+- **Paper** — performance-optimized fork
+- **Fabric** — lightweight mod platform
+- **Forge** — classic mod platform
+
+**Requirements:**
+- GitHub account with Codespaces access (free plan includes 60h/month)
+
+> The server lives in your GitHub account. You control everything.`,
+      },
+    },
+  },
+  {
     id: "8",
     slug: "open-u",
     name: "Open ú.",
