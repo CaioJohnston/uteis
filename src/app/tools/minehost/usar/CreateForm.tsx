@@ -69,8 +69,8 @@ export function CreateForm({ onSubmit, loading }: Props) {
               className={cn(
                 "text-left px-4 py-3 rounded-sm border transition-colors duration-150",
                 machine === m.value
-                  ? "border-gold/50 bg-gold/5 text-paper"
-                  : "border-ink-border text-paper/50 hover:border-paper/20 hover:text-paper/70"
+                  ? "border-gold/50 bg-ink-surface text-paper"
+                  : "border-ink-border bg-ink-surface text-paper/50 hover:border-paper/20 hover:text-paper/70"
               )}
             >
               <p className="text-sm font-mono">{m.label}</p>
@@ -92,8 +92,8 @@ export function CreateForm({ onSubmit, loading }: Props) {
               className={cn(
                 "text-left px-4 py-3 rounded-sm border transition-colors duration-150",
                 serverType === s.value
-                  ? "border-gold/50 bg-gold/5 text-paper"
-                  : "border-ink-border text-paper/50 hover:border-paper/20 hover:text-paper/70"
+                  ? "border-gold/50 bg-ink-surface text-paper"
+                  : "border-ink-border bg-ink-surface text-paper/50 hover:border-paper/20 hover:text-paper/70"
               )}
             >
               <p className="text-sm font-mono">{s.label}</p>
@@ -135,7 +135,7 @@ export function CreateForm({ onSubmit, loading }: Props) {
       )}
 
       {/* Advanced */}
-      <div className="border border-ink-border rounded-sm overflow-hidden">
+      <div className="border border-ink-border rounded-sm overflow-hidden bg-ink-surface">
         <button
           type="button"
           onClick={() => setShowAdvanced((v) => !v)}

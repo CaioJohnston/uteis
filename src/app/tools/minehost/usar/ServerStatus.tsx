@@ -133,11 +133,6 @@ export function ServerStatus({
               <span className="text-xs font-mono text-paper/70">{config.version ?? "—"}</span>
             </div>
           </div>
-          {config.jvmArgs && (
-            <p className="text-xs font-mono text-paper/20 break-all border-t border-ink-border pt-2">
-              {config.jvmArgs}
-            </p>
-          )}
         </div>
       )}
 
@@ -185,7 +180,7 @@ export function ServerStatus({
           <button
             onClick={onRestart}
             disabled={loading}
-            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
+            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-ink-surface border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
           >
             {loading ? "reiniciando..." : "reiniciar servidor"}
           </button>
@@ -195,7 +190,7 @@ export function ServerStatus({
           <button
             onClick={onStop}
             disabled={loading}
-            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
+            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-ink-surface border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
           >
             {loading ? "parando..." : "parar codespace"}
           </button>
@@ -204,7 +199,7 @@ export function ServerStatus({
         <button
           onClick={onDelete}
           disabled={loading}
-          className="w-full px-4 py-2.5 text-sm font-mono rounded-sm border border-red-900/40 text-red-400/60 hover:border-red-400/40 hover:text-red-400 disabled:opacity-40 transition-colors duration-150"
+          className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-ink-surface border border-red-900/40 text-red-400/60 hover:border-red-400/40 hover:text-red-400 disabled:opacity-40 transition-colors duration-150"
         >
           deletar servidor
         </button>
