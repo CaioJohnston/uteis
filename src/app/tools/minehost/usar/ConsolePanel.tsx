@@ -32,6 +32,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(0);
+  const prevTailRef = useRef<string>("");
   const autoScroll = useRef(true);
   const onStatusUpdateRef = useRef(onStatusUpdate);
   onStatusUpdateRef.current = onStatusUpdate;
@@ -54,6 +55,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     if (!gist_id) return;
 
     cursorRef.current = 0;
+    prevTailRef.current = "";
     setLines([]);
     setConnected(false);
 
@@ -81,13 +83,27 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         });
 
         const log = data.log ?? [];
-        const serverCursor = data.cursor ?? log.length;
-        if (serverCursor > cursorRef.current) {
-          const windowStart = serverCursor - log.length;
-          const localStart = Math.max(0, cursorRef.current - windowStart);
-          const newLines = log.slice(localStart);
+        const serverCursor = data.cursor ?? 0;
+
+        if (log.length > 0) {
+          const prevTail = prevTailRef.current;
+          let newLines: string[];
+
+          if (!prevTail) {
+            newLines = log;
+          } else if (serverCursor > cursorRef.current) {
+            // New backend: cursor is absolute total — slice precisely
+            const windowStart = serverCursor - log.length;
+            newLines = log.slice(Math.max(0, cursorRef.current - windowStart));
+          } else {
+            // Old backend or stalled cursor: detect via tail content
+            const prevIdx = log.lastIndexOf(prevTail);
+            newLines = prevIdx === -1 ? log : log.slice(prevIdx + 1);
+          }
+
           if (newLines.length > 0) {
             setLines((prev) => [...prev.slice(-2000), ...newLines]);
+            prevTailRef.current = log[log.length - 1];
           }
           cursorRef.current = serverCursor;
         }

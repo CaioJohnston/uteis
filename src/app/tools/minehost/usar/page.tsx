@@ -319,6 +319,29 @@ function MineHostContent() {
     }
   };
 
+  const handleRestartMC = () => {
+    if (state.tag !== "console") return;
+    const gist_id = state.gist_id;
+    setConfirmState({
+      title: "Reiniciar servidor",
+      body: "O servidor Minecraft será reiniciado. Jogadores conectados serão desconectados.",
+      confirmLabel: "reiniciar",
+      onConfirm: async () => {
+        setConfirmState(null);
+        setActionLoading(true);
+        try {
+          await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: "__minehost_restart__" }),
+          });
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
   const handleDelete = () => {
     if (state.tag !== "console") return;
     const name = state.codespace.name;
@@ -502,6 +525,7 @@ function MineHostContent() {
                   onStart={handleStartCodespace}
                   onStop={handleStopCodespace}
                   onDelete={handleDelete}
+                  onRestart={handleRestartMC}
                   loading={actionLoading}
                 />
               </div>

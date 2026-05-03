@@ -28,6 +28,7 @@ interface Props {
   onStop: () => void;
   onStart: () => void;
   onDelete: () => void;
+  onRestart: () => void;
   loading: boolean;
 }
 
@@ -59,6 +60,7 @@ export function ServerStatus({
   onStop,
   onStart,
   onDelete,
+  onRestart,
   loading,
 }: Props) {
   const { running, server_ip, config, ram } = serverInfo;
@@ -176,6 +178,16 @@ export function ServerStatus({
             className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-gold text-ink-DEFAULT hover:bg-gold/90 disabled:opacity-40 transition-colors duration-150"
           >
             {loading ? "iniciando..." : "iniciar codespace →"}
+          </button>
+        )}
+
+        {isAvailable && running && (
+          <button
+            onClick={onRestart}
+            disabled={loading}
+            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
+          >
+            {loading ? "reiniciando..." : "reiniciar servidor"}
           </button>
         )}
 
