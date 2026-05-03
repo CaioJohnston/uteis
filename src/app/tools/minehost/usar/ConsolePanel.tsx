@@ -81,10 +81,15 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         });
 
         const log = data.log ?? [];
-        if (log.length > cursorRef.current) {
-          const newLines = log.slice(cursorRef.current);
-          setLines((prev) => [...prev.slice(-2000), ...newLines]);
-          cursorRef.current = log.length;
+        const serverCursor = data.cursor ?? log.length;
+        if (serverCursor > cursorRef.current) {
+          const windowStart = serverCursor - log.length;
+          const localStart = Math.max(0, cursorRef.current - windowStart);
+          const newLines = log.slice(localStart);
+          if (newLines.length > 0) {
+            setLines((prev) => [...prev.slice(-2000), ...newLines]);
+          }
+          cursorRef.current = serverCursor;
         }
       } catch {
         setConnected(false);
