@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_CLIENT_ID!,
     redirect_uri: `${process.env.NEXT_PUBLIC_URL}/api/auth/github/callback`,
-    scope: "codespace",
+    scope: "codespace gist",
     state,
   });
 

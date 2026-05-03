@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
+interface ServerInfo {
+  running: boolean;
+  server_ip: string | null;
+  config: { type?: string; version?: string; jvmArgs?: string } | null;
+  ram: { usedMB: number; totalMB: number; percent: number } | null;
+}
+
 interface Props {
   codespace: string;
+  gist_id: string;
+  onStatusUpdate?: (info: ServerInfo) => void;
 }
 
 function colorLine(line: string): string {
@@ -15,15 +24,17 @@ function colorLine(line: string): string {
   return "text-paper/60";
 }
 
-export function ConsolePanel({ codespace }: Props) {
+export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [connected, setConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
+  const cursorRef = useRef(0);
   const autoScroll = useRef(true);
+  const onStatusUpdateRef = useRef(onStatusUpdate);
+  onStatusUpdateRef.current = onStatusUpdate;
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -37,36 +48,61 @@ export function ConsolePanel({ codespace }: Props) {
     }
   }, [lines]);
 
+  // ── Polling — gist-based (Codespace ports not accessible headless)
+
   useEffect(() => {
-    const es = new EventSource(`/api/minehost/sse?name=${codespace}`);
+    if (!gist_id) return;
 
-    es.onopen = () => setConnected(true);
+    cursorRef.current = 0;
+    setLines([]);
+    setConnected(false);
 
-    es.onmessage = (e) => {
+    const poll = async () => {
       try {
-        const text: string = JSON.parse(e.data);
-        const newLines = text.split("\n").filter((l) => l.trim().length > 0);
-        setLines((prev) => [...prev.slice(-2000), ...newLines]);
-      } catch {}
+        const res = await fetch(`/api/minehost/server?gist_id=${gist_id}`);
+        if (!res.ok) { setConnected(false); return; }
+        const data = await res.json() as {
+          reachable?: boolean;
+          running?: boolean;
+          log?: string[];
+          cursor?: number;
+          server_ip?: string | null;
+          config?: { type?: string; version?: string; jvmArgs?: string } | null;
+          ram?: { usedMB: number; totalMB: number; percent: number } | null;
+        };
+        setConnected(data.reachable ?? false);
+
+        // Propagate server info to parent
+        onStatusUpdateRef.current?.({
+          running: data.running ?? false,
+          server_ip: data.server_ip ?? null,
+          config: data.config ?? null,
+          ram: data.ram ?? null,
+        });
+
+        const log = data.log ?? [];
+        if (log.length > cursorRef.current) {
+          const newLines = log.slice(cursorRef.current);
+          setLines((prev) => [...prev.slice(-2000), ...newLines]);
+          cursorRef.current = log.length;
+        }
+      } catch {
+        setConnected(false);
+      }
     };
 
-    es.onerror = () => {
-      setConnected(false);
-    };
-
-    return () => {
-      es.close();
-      setConnected(false);
-    };
-  }, [codespace]);
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => clearInterval(id);
+  }, [gist_id]);
 
   const sendCommand = async () => {
-    if (!input.trim() || sending) return;
+    if (!input.trim() || sending || !gist_id) return;
     const cmd = input.trim();
     setInput("");
     setSending(true);
     try {
-      await fetch(`/api/minehost/server?name=${codespace}`, {
+      await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: cmd }),
@@ -83,23 +119,11 @@ export function ConsolePanel({ codespace }: Props) {
   return (
     <div className="flex flex-col h-full bg-ink-surface border border-ink-border rounded-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-ink-border">
-        <span className="text-xs font-mono text-paper/40 uppercase tracking-widest">
-          Console
-        </span>
-        <span
-          className={cn(
-            "flex items-center gap-1.5 text-xs font-mono",
-            connected ? "text-emerald-400" : "text-paper/30"
-          )}
-        >
-          <span
-            className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              connected ? "bg-emerald-400" : "bg-paper/20"
-            )}
-          />
-          {connected ? "conectado" : "reconectando..."}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-ink-border shrink-0">
+        <span className="text-xs font-mono text-paper/40 uppercase tracking-widest">Console</span>
+        <span className={cn("flex items-center gap-1.5 text-xs font-mono", connected ? "text-emerald-400" : "text-paper/30")}>
+          <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-emerald-400" : "bg-paper/20")} />
+          {connected ? "conectado" : gist_id ? "aguardando servidor..." : "sem conexão"}
         </span>
       </div>
 
@@ -112,7 +136,7 @@ export function ConsolePanel({ codespace }: Props) {
       >
         {lines.length === 0 ? (
           <p className="text-paper/20 font-mono text-xs">
-            Aguardando logs do servidor...
+            {gist_id ? "Aguardando logs do servidor..." : "Sem conexão com o servidor."}
           </p>
         ) : (
           lines.map((line, i) => (
@@ -125,7 +149,7 @@ export function ConsolePanel({ codespace }: Props) {
       </div>
 
       {/* Command input */}
-      <div className="border-t border-ink-border flex items-center gap-2 px-4 py-2">
+      <div className="border-t border-ink-border flex items-center gap-2 px-4 py-2 shrink-0">
         <span className="text-paper/30 font-mono text-xs shrink-0">{">"}</span>
         <input
           type="text"
@@ -134,11 +158,11 @@ export function ConsolePanel({ codespace }: Props) {
           onKeyDown={handleKeyDown}
           placeholder="say Olá, mundo!"
           className="flex-1 bg-transparent text-sm font-mono text-paper/80 placeholder:text-paper/20 focus:outline-none"
-          disabled={sending}
+          disabled={sending || !gist_id}
         />
         <button
           onClick={sendCommand}
-          disabled={!input.trim() || sending}
+          disabled={!input.trim() || sending || !gist_id}
           className="text-xs font-mono text-paper/30 hover:text-gold disabled:opacity-30 transition-colors duration-150 shrink-0"
         >
           enviar
