@@ -24,16 +24,71 @@ function colorLine(line: string): string {
   return "text-paper/60";
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  deps:     "instalando dependências e Java",
+  download: "baixando servidor Minecraft",
+  install:  "instalando servidor",
+  starting: "iniciando servidor",
+};
+
+// Time-based thresholds used as fallback when stage is null (old template or pre-first-stage)
+const TIME_STEPS = ["deps", "download", "starting"] as const;
+const TIME_THRESHOLDS = [0, 60, 150];
+
+function StartupStages({ stage, elapsed }: { stage: string | null; elapsed: number }) {
+  const steps: string[] = stage === "install" || stage === "starting"
+    ? ["deps", "download", "install", "starting"]
+    : ["deps", "download", "starting"];
+
+  let activeIdx: number;
+  if (stage !== null) {
+    activeIdx = steps.indexOf(stage);
+    if (activeIdx === -1) activeIdx = 0;
+  } else {
+    activeIdx = TIME_STEPS.reduce((acc, _, i) => elapsed >= TIME_THRESHOLDS[i] ? i : acc, 0);
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <p className="text-paper/30 font-mono text-xs">inicializando servidor...</p>
+      <div className="space-y-2 pl-1">
+        {steps.map((key, i) => (
+          <div key={key} className="flex items-center gap-2.5">
+            <span className={cn(
+              "text-xs font-mono shrink-0 w-3",
+              i < activeIdx ? "text-emerald-400" : i === activeIdx ? "text-gold" : "text-paper/20"
+            )}>
+              {i < activeIdx ? "✓" : i === activeIdx ? "●" : "○"}
+            </span>
+            <span className={cn(
+              "text-xs font-mono",
+              i < activeIdx ? "text-paper/30 line-through" : i === activeIdx ? "text-paper/70" : "text-paper/20"
+            )}>
+              {STAGE_LABELS[key]}
+              {i === activeIdx && stage === null && elapsed > 0 && (
+                <span className="text-paper/30 ml-2">{elapsed}s</span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [stage, setStage] = useState<string | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(0);
   const prevTailRef = useRef<string>("");
   const autoScroll = useRef(true);
+  const connectedAtRef = useRef<number | null>(null);
   const onStatusUpdateRef = useRef(onStatusUpdate);
   onStatusUpdateRef.current = onStatusUpdate;
 
@@ -49,6 +104,25 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     }
   }, [lines]);
 
+  // Track elapsed time since first connection (for startup stage hints)
+  useEffect(() => {
+    if (connected) {
+      if (connectedAtRef.current === null) connectedAtRef.current = Date.now();
+    } else {
+      connectedAtRef.current = null;
+      setElapsedSec(0);
+    }
+  }, [connected]);
+
+  useEffect(() => {
+    if (!connected || lines.length > 0) return;
+    const id = setInterval(() => {
+      if (connectedAtRef.current !== null)
+        setElapsedSec(Math.floor((Date.now() - connectedAtRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [connected, lines.length]);
+
   // ── Polling — gist-based (Codespace ports not accessible headless)
 
   useEffect(() => {
@@ -57,6 +131,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     cursorRef.current = 0;
     prevTailRef.current = "";
     setLines([]);
+    setStage(null);
     setConnected(false);
 
     const poll = async () => {
@@ -66,6 +141,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         const data = await res.json() as {
           reachable?: boolean;
           running?: boolean;
+          stage?: string | null;
           log?: string[];
           cursor?: number;
           server_ip?: string | null;
@@ -73,6 +149,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
         };
         setConnected(data.reachable ?? false);
+        setStage(data.stage ?? null);
 
         // Propagate server info to parent
         onStatusUpdateRef.current?.({
@@ -102,7 +179,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
           }
 
           if (newLines.length > 0) {
-            setLines((prev) => [...prev.slice(-2000), ...newLines]);
+            setLines((prev) => [...prev, ...newLines].slice(-500));
             prevTailRef.current = log[log.length - 1];
           }
           cursorRef.current = serverCursor;
@@ -156,9 +233,11 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         style={{ fontFamily: "var(--font-jetbrains)", fontSize: "0.72rem", lineHeight: "1.6" }}
       >
         {lines.length === 0 ? (
-          <p className="text-paper/20 font-mono text-xs">
-            {gist_id ? "Aguardando logs do servidor..." : "Sem conexão com o servidor."}
-          </p>
+          connected
+            ? <StartupStages stage={stage} elapsed={elapsedSec} />
+            : <p className="text-paper/20 font-mono text-xs">
+                {gist_id ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
+              </p>
         ) : (
           lines.map((line, i) => (
             <p key={i} className={cn("whitespace-pre-wrap break-all", colorLine(line))}>

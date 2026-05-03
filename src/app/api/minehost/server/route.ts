@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       running: state.running ?? false,
       reachable: true,
+      stage: (state.stage as string | null) ?? null,
       log: state.log ?? [],
       cursor: state.cursor ?? 0,
       updated: state.updated ?? 0,

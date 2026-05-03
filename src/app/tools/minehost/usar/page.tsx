@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -130,23 +131,6 @@ function MineHostContent() {
   const startRetriesRef = useRef(0);
   const START_SHUTDOWN_TOLERANCE = 3;
 
-  // ── Lock body scroll on desktop when console is active ──────────────────
-
-  useEffect(() => {
-    if (state.tag !== "console") return;
-    const apply = () => {
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-      document.documentElement.style.overflow = isDesktop ? "hidden" : "";
-      document.body.style.overflow = isDesktop ? "hidden" : "";
-    };
-    apply();
-    window.addEventListener("resize", apply);
-    return () => {
-      window.removeEventListener("resize", apply);
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-    };
-  }, [state.tag]);
 
   // ── Apply codespace state to page state ──────────────────────────────────
 
@@ -370,7 +354,18 @@ function MineHostContent() {
   const isConsole = state.tag === "console";
 
   return (
-    <>
+    <div className="relative min-h-[calc(100vh-theme(spacing.14)-theme(spacing.32))]">
+      {/* Tiled dirt background — absolute dentro do main, não afeta Nav/Footer */}
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          backgroundImage: "url('/git-craft_dirt_bg.jpg')",
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+        }}
+      />
+      <div className="absolute inset-0 -z-10 pointer-events-none" style={{ backgroundColor: "rgb(12 11 10 / 0.92)" }} />
+
       {confirmState && (
         <ConfirmDialog
           title={confirmState.title}
@@ -382,6 +377,17 @@ function MineHostContent() {
       )}
 
       <div className="max-w-5xl mx-auto px-6 py-16 flex flex-col min-h-[calc(100vh-8rem)]">
+        <div className="flex justify-center mb-8 shrink-0">
+          <Image
+            src="/git-craft_logo.png"
+            alt="Git-Craft"
+            width={320}
+            height={100}
+            className="opacity-90"
+            priority
+          />
+        </div>
+
         <Link
           href="/tools/minehost"
           className="inline-flex items-center gap-2 text-xs font-mono text-paper/30 hover:text-gold transition-colors duration-200 mb-12 shrink-0"
@@ -465,30 +471,66 @@ function MineHostContent() {
         )}
 
         {/* Provisioning */}
-        {state.tag === "provisioning" && (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-2xl text-paper" style={{ fontFamily: "Cormorant, serif" }}>
-                Iniciando servidor...
-              </h2>
-              <p className="text-sm text-paper/50">O Codespace está sendo inicializado. Isso pode levar alguns minutos.</p>
-            </div>
+        {state.tag === "provisioning" && (() => {
+          const csState = state.codespace.state;
+          const steps = [
+            { label: "servidor configurado", states: [] as string[], done: true },
+            { label: "criando codespace", states: ["Queued", "Provisioning", "Created"] },
+            { label: "inicializando ambiente", states: ["Awaiting", "Starting", "Rebuilding", "Updating"] },
+            { label: "pronto para usar", states: ["Available"] },
+          ];
+          const activeIdx = steps.findIndex(s => s.states.includes(csState));
+          const resolvedIdx = activeIdx === -1 ? 1 : activeIdx;
 
-            <div className="bg-ink-surface border border-ink-border rounded-sm p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-4 h-4 border border-paper/20 border-t-gold rounded-full animate-spin shrink-0" />
-                <span className="text-sm font-mono text-paper/60">{state.codespace.state.toLowerCase()}...</span>
+          return (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-2xl text-paper" style={{ fontFamily: "Cormorant, serif" }}>
+                  Iniciando servidor...
+                </h2>
+                <p className="text-sm text-paper/50">Isso pode levar alguns minutos.</p>
               </div>
-              <p className="text-xs font-mono text-paper/30 border-t border-ink-border pt-4">
-                {state.codespace.name}
+
+              <div className="bg-ink-surface border border-ink-border rounded-sm p-6 space-y-4">
+                <div className="space-y-2.5">
+                  {steps.map((step, i) => {
+                    const isDone = i < resolvedIdx || step.done;
+                    const isActive = i === resolvedIdx && !step.done;
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className={cn(
+                          "text-xs font-mono shrink-0 w-3",
+                          isDone ? "text-emerald-400" : isActive ? "text-gold" : "text-paper/20"
+                        )}>
+                          {isDone ? "✓" : isActive ? "●" : "○"}
+                        </span>
+                        <span className={cn(
+                          "text-xs font-mono",
+                          isDone ? "text-paper/30" : isActive ? "text-paper/70" : "text-paper/20"
+                        )}>
+                          {step.label}
+                          {isActive && (
+                            <span className="text-paper/30 ml-2">({csState.toLowerCase()})</span>
+                          )}
+                        </span>
+                        {isActive && (
+                          <span className="w-3 h-3 border border-paper/20 border-t-gold rounded-full animate-spin shrink-0 ml-1" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs font-mono text-paper/20 border-t border-ink-border pt-4">
+                  {state.codespace.name}
+                </p>
+              </div>
+
+              <p className="text-xs font-mono text-paper/30">
+                Verificando automaticamente a cada 10 segundos.
               </p>
             </div>
-
-            <p className="text-xs font-mono text-paper/30">
-              Esta página verifica o status automaticamente a cada 10 segundos.
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Console */}
         {state.tag === "console" && (
@@ -518,7 +560,7 @@ function MineHostContent() {
               </div>
 
               {/* Dashboard */}
-              <div className="h-[500px] lg:h-full lg:overflow-y-auto">
+              <div className="h-[500px] lg:h-full">
                 <ServerStatus
                   codespaceState={state.codespace.state}
                   serverInfo={serverInfo}
@@ -533,6 +575,6 @@ function MineHostContent() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
