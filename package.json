@@ -13,6 +13,7 @@
     "@google/generative-ai": "^0.24.1",
     "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
+    "libsodium-wrappers": "^0.8.4",
     "next": "14.2.5",
     "next-themes": "^0.3.0",
     "react": "^18",
@@ -21,6 +22,7 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

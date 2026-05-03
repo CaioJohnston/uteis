@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import _sodium from "libsodium-wrappers";
 
 const TEMPLATE_REPO = "CaioJohnston/minecraft-server-template";
 const GITHUB_API = "https://api.github.com";
@@ -14,6 +15,14 @@ function ghHeaders(token: string) {
     "X-GitHub-Api-Version": "2022-11-28",
     "Content-Type": "application/json",
   };
+}
+
+async function encryptSecret(b64Key: string, value: string): Promise<string> {
+  await _sodium.ready;
+  const keyBytes = Buffer.from(b64Key, "base64");
+  const valueBytes = Buffer.from(value, "utf8");
+  const encrypted = _sodium.crypto_box_seal(valueBytes, keyBytes);
+  return Buffer.from(encrypted).toString("base64");
 }
 
 // GET — fetch specific codespace by name OR list all MineHost codespaces
@@ -51,7 +60,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ codespaces });
 }
 
-// POST — create a new codespace
+// POST — create a new codespace (with gist + codespace secrets for communication)
 export async function POST(req: NextRequest) {
   const token = getToken(req);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -61,31 +70,104 @@ export async function POST(req: NextRequest) {
     machine = "basicLinux32gb",
     serverType = "vanilla",
     version = "latest",
-    jvmArgs = "-Xmx2048m -Xms1024m",
+    jvmArgs = "-Xmx4g -Xms2g",
+    cfUrl = "",
   } = body;
 
-  const res = await fetch(`${GITHUB_API}/repos/${TEMPLATE_REPO}/codespaces`, {
+  // 1. Create gist (communication channel between Codespace and hub)
+  const gistRes = await fetch(`${GITHUB_API}/gists`, {
     method: "POST",
     headers: ghHeaders(token),
     body: JSON.stringify({
-      machine,
-      environment_variables: {
-        MINEHOST_TYPE: serverType,
-        MINEHOST_VERSION: version,
-        MINEHOST_JVM: jvmArgs,
+      description: "minehost-state",
+      public: false,
+      files: {
+        "state.json": {
+          content: JSON.stringify({ running: false, log: [], cursor: 0, pending_cmd: null, updated: 0 }),
+        },
       },
     }),
   });
 
+  if (!gistRes.ok) {
+    const err = await gistRes.json().catch(() => ({}));
+    return NextResponse.json(
+      { error: (err as { message?: string }).message ?? "Failed to create gist (ensure gist scope is authorized)" },
+      { status: gistRes.status }
+    );
+  }
+
+  const gistData = await gistRes.json();
+  const gist_id: string = gistData.id;
+
+  // 2. Fetch template repo ID + Codespace secrets public key (in parallel)
+  const [repoRes, pkRes] = await Promise.all([
+    fetch(`${GITHUB_API}/repos/${TEMPLATE_REPO}`, { headers: ghHeaders(token) }),
+    fetch(`${GITHUB_API}/user/codespaces/secrets/public-key`, { headers: ghHeaders(token) }),
+  ]);
+
+  if (!pkRes.ok) {
+    fetch(`${GITHUB_API}/gists/${gist_id}`, { method: "DELETE", headers: ghHeaders(token) }).catch(() => {});
+    return NextResponse.json({ error: "Failed to fetch Codespace secrets public key" }, { status: 500 });
+  }
+
+  const repoData = repoRes.ok ? await repoRes.json() : null;
+  const repoId: number | null = repoData?.id ?? null;
+  const { key_id, key: publicKey } = await pkRes.json() as { key_id: string; key: string };
+
+  // 3. Encrypt and set all Codespace secrets (these ARE available as env vars, unlike environment_variables)
+  const secrets: Record<string, string> = {
+    MINEHOST_GIST_ID: gist_id,
+    MINEHOST_TOKEN: token,
+    MINEHOST_TYPE: serverType,
+    MINEHOST_VERSION: version,
+    MINEHOST_JVM: jvmArgs,
+    ...(cfUrl ? { MINEHOST_CF_URL: cfUrl } : {}),
+  };
+
+  const secretResults = await Promise.all(
+    Object.entries(secrets).map(async ([name, value]) => {
+      const encrypted_value = await encryptSecret(publicKey, value);
+      const secretBody: Record<string, unknown> = { encrypted_value, key_id };
+      if (repoId) {
+        secretBody.visibility = "selected";
+        secretBody.selected_repository_ids = [repoId];
+      }
+      const r = await fetch(`${GITHUB_API}/user/codespaces/secrets/${name}`, {
+        method: "PUT",
+        headers: ghHeaders(token),
+        body: JSON.stringify(secretBody),
+      });
+      return { name, ok: r.ok || r.status === 204, status: r.status };
+    })
+  );
+
+  const failed = secretResults.filter((r) => !r.ok);
+  if (failed.length > 0) {
+    fetch(`${GITHUB_API}/gists/${gist_id}`, { method: "DELETE", headers: ghHeaders(token) }).catch(() => {});
+    return NextResponse.json(
+      { error: `Failed to set Codespace secrets: ${failed.map((r) => r.name).join(", ")}` },
+      { status: 500 }
+    );
+  }
+
+  // 4. Create Codespace — secrets already set, will be injected as env vars on start
+  const res = await fetch(`${GITHUB_API}/repos/${TEMPLATE_REPO}/codespaces`, {
+    method: "POST",
+    headers: ghHeaders(token),
+    body: JSON.stringify({ machine }),
+  });
+
   const data = await res.json();
   if (!res.ok) {
+    fetch(`${GITHUB_API}/gists/${gist_id}`, { method: "DELETE", headers: ghHeaders(token) }).catch(() => {});
     return NextResponse.json(
-      { error: data.message ?? "Failed to create codespace" },
+      { error: (data as { message?: string }).message ?? "Failed to create codespace" },
       { status: res.status }
     );
   }
 
-  return NextResponse.json({ codespace: data });
+  return NextResponse.json({ codespace: data, gist_id });
 }
 
 // DELETE — delete codespace by name
