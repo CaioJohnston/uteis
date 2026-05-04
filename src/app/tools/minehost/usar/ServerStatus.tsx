@@ -68,8 +68,9 @@ export function ServerStatus({
 }: Props) {
   const { running, server_ip, playit_claim, config, ram } = serverInfo;
   const isAvailable = codespaceState === "Available";
-  const isStopped = codespaceState === "Shutdown" || codespaceState === "ShuttingDown";
-  const isTransitioning = !isAvailable && !isStopped && codespaceState !== "Failed";
+  const isStopped = codespaceState === "Shutdown";
+  const isShuttingDown = codespaceState === "ShuttingDown";
+  const isTransitioning = !isAvailable && !isStopped && !isShuttingDown && codespaceState !== "Failed";
 
   return (
     <div className="space-y-3 h-full flex flex-col">
@@ -86,7 +87,7 @@ export function ServerStatus({
               ? "bg-amber-400 animate-pulse"
               : isStopped
               ? "bg-paper/20"
-              : isTransitioning
+              : isShuttingDown || isTransitioning
               ? "bg-blue-400 animate-pulse"
               : "bg-red-400"
           )} />
@@ -97,6 +98,8 @@ export function ServerStatus({
               ? "iniciando..."
               : isStopped
               ? "parado"
+              : isShuttingDown
+              ? "desligando..."
               : isTransitioning
               ? codespaceState.toLowerCase()
               : "erro"}
@@ -194,17 +197,7 @@ export function ServerStatus({
           </button>
         )}
 
-        {isAvailable && running && (
-          <button
-            onClick={onRestart}
-            disabled={loading}
-            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-ink-surface border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 disabled:opacity-40 transition-colors duration-150"
-          >
-            {loading ? "reiniciando..." : "reiniciar servidor"}
-          </button>
-        )}
-
-        {isAvailable && (
+{isAvailable && (
           <button
             onClick={onStop}
             disabled={loading}
