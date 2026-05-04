@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
       cursor: state.cursor ?? 0,
       updated: state.updated ?? 0,
       server_ip: state.server_ip ?? null,
+      playit_claim: (state.playit_claim as string | null) ?? null,
       config: state.config ?? null,
       ram: state.ram ?? null,
     });

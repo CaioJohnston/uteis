@@ -9,6 +9,7 @@ export interface CreatePayload {
   version: string;
   jvmArgs: string;
   cfUrl?: string;
+  playitToken?: string;
 }
 
 interface Props {
@@ -40,6 +41,7 @@ export function CreateForm({ onSubmit, loading }: Props) {
   const [version, setVersion]         = useState("latest");
   const [jvmArgs, setJvmArgs]         = useState(JVM_DEFAULTS.basicLinux32gb);
   const [cfUrl, setCfUrl]             = useState("");
+  const [playitToken, setPlayitToken] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const isCurseForge = serverType === "curseforge";
@@ -50,7 +52,14 @@ export function CreateForm({ onSubmit, loading }: Props) {
   };
 
   const handleSubmit = () => {
-    onSubmit({ machine, serverType, version, jvmArgs, cfUrl: isCurseForge ? cfUrl : undefined });
+    onSubmit({
+      machine,
+      serverType,
+      version,
+      jvmArgs,
+      cfUrl: isCurseForge ? cfUrl : undefined,
+      playitToken: playitToken.trim() || undefined,
+    });
   };
 
   const canSubmit = !loading && (!isCurseForge || cfUrl.trim().startsWith("http"));
@@ -146,17 +155,34 @@ export function CreateForm({ onSubmit, loading }: Props) {
         </button>
 
         {showAdvanced && (
-          <div className="px-4 pb-4 pt-2 border-t border-ink-border space-y-1.5">
-            <label className="block text-xs font-mono text-paper/40 uppercase tracking-widest">JVM Args</label>
-            <input
-              type="text"
-              value={jvmArgs}
-              onChange={(e) => setJvmArgs(e.target.value)}
-              className="w-full bg-ink-surface border border-ink-border rounded-sm px-4 py-2.5 text-sm text-paper/80 focus:outline-none focus:border-gold/50 transition-colors duration-150 font-mono"
-            />
-            <p className="text-xs text-paper/30 font-mono">
-              Auto-ajustado pela máquina. 8 GB: {JVM_DEFAULTS.basicLinux32gb} · 16 GB: {JVM_DEFAULTS.standardLinux32gb}
-            </p>
+          <div className="px-4 pb-4 pt-2 border-t border-ink-border space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-mono text-paper/40 uppercase tracking-widest">JVM Args</label>
+              <input
+                type="text"
+                value={jvmArgs}
+                onChange={(e) => setJvmArgs(e.target.value)}
+                className="w-full bg-ink-surface border border-ink-border rounded-sm px-4 py-2.5 text-sm text-paper/80 focus:outline-none focus:border-gold/50 transition-colors duration-150 font-mono"
+              />
+              <p className="text-xs text-paper/30 font-mono">
+                Auto-ajustado pela máquina. 8 GB: {JVM_DEFAULTS.basicLinux32gb} · 16 GB: {JVM_DEFAULTS.standardLinux32gb}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-mono text-paper/40 uppercase tracking-widest">
+                playit.gg Secret Key
+              </label>
+              <input
+                type="password"
+                value={playitToken}
+                onChange={(e) => setPlayitToken(e.target.value)}
+                placeholder="Opcional — túnel estável e endereço fixo"
+                className="w-full bg-ink-surface border border-ink-border rounded-sm px-4 py-2.5 text-sm text-paper/80 placeholder:text-paper/20 focus:outline-none focus:border-gold/50 transition-colors duration-150 font-mono"
+              />
+              <p className="text-xs text-paper/30 font-mono">
+                Sem chave: endereço gerado na primeira vez (requer autenticação via link). Com chave: endereço fixo permanente.
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
     version = "latest",
     jvmArgs = "-Xmx4g -Xms2g",
     cfUrl = "",
+    playitToken = "",
   } = body;
 
   // 1. Create gist (communication channel between Codespace and hub)
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
     MINEHOST_VERSION: version,
     MINEHOST_JVM: jvmArgs,
     ...(cfUrl ? { MINEHOST_CF_URL: cfUrl } : {}),
+    ...(playitToken ? { MINEHOST_PLAYIT_TOKEN: playitToken } : {}),
   };
 
   const secretResults = await Promise.all(
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ codespace: data, gist_id });
 }
 
-// DELETE — delete codespace by name
+// DELETE — delete codespace by name and its associated gist
 export async function DELETE(req: NextRequest) {
   const token = getToken(req);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -178,18 +180,30 @@ export async function DELETE(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name");
   if (!name) return NextResponse.json({ error: "Missing name" }, { status: 400 });
 
+  const gist_id = req.nextUrl.searchParams.get("gist_id");
+
   const res = await fetch(`${GITHUB_API}/user/codespaces/${name}`, {
     method: "DELETE",
     headers: ghHeaders(token),
   });
 
-  if (res.status === 204 || res.ok) return NextResponse.json({ ok: true });
+  if (res.status !== 204 && !res.ok) {
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(
+      { error: (data as { message?: string }).message ?? "Failed to delete" },
+      { status: res.status }
+    );
+  }
 
-  const data = await res.json().catch(() => ({}));
-  return NextResponse.json(
-    { error: (data as { message?: string }).message ?? "Failed to delete" },
-    { status: res.status }
-  );
+  // Best-effort gist cleanup — don't fail the response if this errors
+  if (gist_id) {
+    fetch(`${GITHUB_API}/gists/${gist_id}`, {
+      method: "DELETE",
+      headers: ghHeaders(token),
+    }).catch(() => {});
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 // PATCH — start or stop a codespace

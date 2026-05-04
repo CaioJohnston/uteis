@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
 
   if (!res.ok) return NextResponse.json({ gist_id: null });
 
-  const gists = await res.json() as Array<{ id: string; description: string }>;
-  const match = gists.find((g) => g.description === "minehost-state");
-  return NextResponse.json({ gist_id: match?.id ?? null });
+  const gists = await res.json() as Array<{ id: string; description: string; created_at: string }>;
+  const matches = gists
+    .filter((g) => g.description === "minehost-state")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return NextResponse.json({ gist_id: matches[0]?.id ?? null });
 }

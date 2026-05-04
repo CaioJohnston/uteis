@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface ServerInfo {
   running: boolean;
   server_ip: string | null;
+  playit_claim: string | null;
   config: { type?: string; version?: string; jvmArgs?: string } | null;
   ram: { usedMB: number; totalMB: number; percent: number } | null;
 }
@@ -145,6 +146,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
           log?: string[];
           cursor?: number;
           server_ip?: string | null;
+          playit_claim?: string | null;
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
         };
@@ -155,6 +157,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         onStatusUpdateRef.current?.({
           running: data.running ?? false,
           server_ip: data.server_ip ?? null,
+          playit_claim: data.playit_claim ?? null,
           config: data.config ?? null,
           ram: data.ram ?? null,
         });

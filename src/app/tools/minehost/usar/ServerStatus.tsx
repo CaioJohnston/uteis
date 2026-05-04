@@ -18,6 +18,7 @@ export type CodespaceState =
 export interface ServerInfo {
   running: boolean;
   server_ip: string | null;
+  playit_claim: string | null;
   config: { type?: string; version?: string; jvmArgs?: string } | null;
   ram: { usedMB: number; totalMB: number; percent: number } | null;
 }
@@ -63,7 +64,7 @@ export function ServerStatus({
   onRestart,
   loading,
 }: Props) {
-  const { running, server_ip, config, ram } = serverInfo;
+  const { running, server_ip, playit_claim, config, ram } = serverInfo;
   const isAvailable = codespaceState === "Available";
   const isStopped = codespaceState === "Shutdown" || codespaceState === "ShuttingDown";
   const isTransitioning = !isAvailable && !isStopped && codespaceState !== "Failed";
@@ -111,6 +112,21 @@ export function ServerStatus({
               <CopyButton text={server_ip} />
             </div>
             <p className="text-xs font-mono text-paper/20">porta 25565 (padrão)</p>
+          </div>
+        ) : playit_claim ? (
+          <div className="space-y-2">
+            <p className="text-xs font-mono text-amber-400/80">autenticação playit.gg pendente</p>
+            <a
+              href={playit_claim}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-gold hover:text-gold/80 transition-colors duration-150"
+            >
+              ativar túnel →
+            </a>
+            <p className="text-xs font-mono text-paper/20 leading-relaxed">
+              Clique para autenticar. O endereço aparecerá aqui após a ativação.
+            </p>
           </div>
         ) : (
           <p className="text-xs font-mono text-paper/30">

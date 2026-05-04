@@ -46,7 +46,7 @@ const PROVISIONING_STATES = new Set([
   "Updating",
 ]);
 
-const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, config: null, ram: null };
+const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, playit_claim: null, config: null, ram: null };
 
 type StoredSession = { name: string; gist_id: string };
 
@@ -158,6 +158,7 @@ function MineHostContent() {
       setServerInfo({
         running: statusData.running ?? false,
         server_ip: statusData.server_ip ?? null,
+        playit_claim: statusData.playit_claim ?? null,
         config: statusData.config ?? null,
         ram: statusData.ram ?? null,
       });
@@ -337,7 +338,9 @@ function MineHostContent() {
         setConfirmState(null);
         setActionLoading(true);
         try {
-          await fetch(`/api/minehost/codespace?name=${name}`, { method: "DELETE" });
+          const gist_id = state.tag === "console" ? state.gist_id : "";
+          const qs = gist_id ? `name=${name}&gist_id=${gist_id}` : `name=${name}`;
+          await fetch(`/api/minehost/codespace?${qs}`, { method: "DELETE" });
           clearSession();
           setServerInfo(EMPTY_SERVER_INFO);
           setState({ tag: "no-server" });
