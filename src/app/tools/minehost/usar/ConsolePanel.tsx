@@ -27,7 +27,7 @@ function colorLine(line: string): string {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  deps:     "instalando dependências e Java",
+  deps:     "instalando dependências",
   download: "baixando servidor Minecraft",
   install:  "instalando servidor",
   starting: "iniciando servidor",
@@ -148,7 +148,9 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           playit_claim?: string | null;
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
+          stage?: string | null;
         };
+        setStage(d.stage ?? null);
         onStatusUpdateRef.current?.({
           running: d.running ?? false,
           server_ip: d.server_ip ?? null,
@@ -178,10 +180,12 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
           cmd_secret?: string | null;
+          stage?: string | null;
         };
         if (cancelled) return;
 
         cmdSecretRef.current = statusData.cmd_secret ?? null;
+        setStage(statusData.stage ?? null);
         onStatusUpdateRef.current?.({
           running: statusData.running ?? false,
           server_ip: statusData.server_ip ?? null,
