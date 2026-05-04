@@ -574,6 +574,7 @@ function MineHostContent() {
                 <ServerStatus
                   codespaceState={state.codespace.state}
                   serverInfo={serverInfo}
+                  webUrl={state.codespace.web_url}
                   onStart={handleStartCodespace}
                   onStop={handleStopCodespace}
                   onDelete={handleDelete}

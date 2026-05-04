@@ -26,6 +26,7 @@ export interface ServerInfo {
 interface Props {
   codespaceState: CodespaceState;
   serverInfo: ServerInfo;
+  webUrl?: string;
   onStop: () => void;
   onStart: () => void;
   onDelete: () => void;
@@ -58,6 +59,7 @@ function CopyButton({ text }: { text: string }) {
 export function ServerStatus({
   codespaceState,
   serverInfo,
+  webUrl,
   onStop,
   onStart,
   onDelete,
@@ -210,6 +212,17 @@ export function ServerStatus({
           >
             {loading ? "parando..." : "parar codespace"}
           </button>
+        )}
+
+        {webUrl && isAvailable && (
+          <a
+            href={`${webUrl.replace(/\/$/, "")}?folder=/workspaces/minecraft-server-template/server`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-2.5 text-sm font-mono rounded-sm bg-ink-surface border border-ink-border text-paper/50 hover:border-paper/30 hover:text-paper/70 transition-colors duration-150 text-center block"
+          >
+            abrir arquivos no VS Code →
+          </a>
         )}
 
         <button
