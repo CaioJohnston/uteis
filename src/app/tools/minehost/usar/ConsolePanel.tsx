@@ -14,6 +14,7 @@ interface ServerInfo {
 interface Props {
   codespace: string;
   gist_id: string;
+  controlUrl?: string;
   onStatusUpdate?: (info: ServerInfo) => void;
 }
 
@@ -77,11 +78,12 @@ function StartupStages({ stage, elapsed }: { stage: string | null; elapsed: numb
   );
 }
 
-export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
+export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [sseActive, setSseActive] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -92,6 +94,9 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   const connectedAtRef = useRef<number | null>(null);
   const onStatusUpdateRef = useRef(onStatusUpdate);
   onStatusUpdateRef.current = onStatusUpdate;
+  // Mutable refs for use inside async callbacks — avoids stale closures
+  const sseActiveRef = useRef(false);
+  const cmdSecretRef = useRef<string | null>(null);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -124,8 +129,124 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     return () => clearInterval(id);
   }, [connected, lines.length]);
 
-  // ── Polling — gist-based (Codespace ports not accessible headless)
+  // ── SSE — direct connection to control-server.js (primary path)
+  useEffect(() => {
+    if (!controlUrl) return;
 
+    let cancelled = false;
+    let es: EventSource | null = null;
+    let statusIntervalId: ReturnType<typeof setInterval> | null = null;
+
+    const pollDirectStatus = async () => {
+      if (cancelled) return;
+      try {
+        const r = await fetch(`${controlUrl}/status`, { cache: "no-store" });
+        if (!r.ok || cancelled) return;
+        const d = await r.json() as {
+          running?: boolean;
+          server_ip?: string | null;
+          playit_claim?: string | null;
+          config?: { type?: string; version?: string; jvmArgs?: string } | null;
+          ram?: { usedMB: number; totalMB: number; percent: number } | null;
+        };
+        onStatusUpdateRef.current?.({
+          running: d.running ?? false,
+          server_ip: d.server_ip ?? null,
+          playit_claim: d.playit_claim ?? null,
+          config: d.config ?? null,
+          ram: d.ram ?? null,
+        });
+      } catch {}
+    };
+
+    const connectSSE = async () => {
+      const controller = new AbortController();
+      const probeTimeout = setTimeout(() => controller.abort(), 5000);
+
+      try {
+        const res = await fetch(`${controlUrl}/status`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        clearTimeout(probeTimeout);
+        if (!res.ok || cancelled) return;
+
+        const statusData = await res.json() as {
+          running?: boolean;
+          server_ip?: string | null;
+          playit_claim?: string | null;
+          config?: { type?: string; version?: string; jvmArgs?: string } | null;
+          ram?: { usedMB: number; totalMB: number; percent: number } | null;
+          cmd_secret?: string | null;
+        };
+        if (cancelled) return;
+
+        cmdSecretRef.current = statusData.cmd_secret ?? null;
+        onStatusUpdateRef.current?.({
+          running: statusData.running ?? false,
+          server_ip: statusData.server_ip ?? null,
+          playit_claim: statusData.playit_claim ?? null,
+          config: statusData.config ?? null,
+          ram: statusData.ram ?? null,
+        });
+
+        es = new EventSource(`${controlUrl}/sse`);
+        let historyReceived = false;
+
+        es.onopen = () => {
+          if (cancelled) { es?.close(); return; }
+          sseActiveRef.current = true;
+          setSseActive(true);
+          setConnected(true);
+          if (connectedAtRef.current === null) connectedAtRef.current = Date.now();
+        };
+
+        es.onmessage = (event) => {
+          if (cancelled) return;
+          try {
+            const text = JSON.parse(event.data as string) as string;
+            const newLines = text.split("\n").filter((l) => l.length > 0);
+            if (newLines.length === 0) return;
+            if (!historyReceived) {
+              historyReceived = true;
+              setLines(newLines.slice(-500));
+            } else {
+              setLines((prev) => [...prev, ...newLines].slice(-500));
+            }
+          } catch {}
+        };
+
+        es.onerror = () => {
+          if (cancelled) return;
+          sseActiveRef.current = false;
+          setSseActive(false);
+          setConnected(false);
+          es?.close();
+          es = null;
+          if (statusIntervalId) { clearInterval(statusIntervalId); statusIntervalId = null; }
+        };
+
+        pollDirectStatus();
+        statusIntervalId = setInterval(pollDirectStatus, 5000);
+
+      } catch {
+        clearTimeout(probeTimeout);
+        // Probe timed out or failed — Gist polling is the fallback
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      cancelled = true;
+      es?.close();
+      if (statusIntervalId) clearInterval(statusIntervalId);
+      sseActiveRef.current = false;
+      setSseActive(false);
+    };
+  }, [controlUrl]);
+
+  // ── Polling — gist-based (fallback when SSE unavailable)
   useEffect(() => {
     if (!gist_id) return;
 
@@ -139,6 +260,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     connectedAtRef.current = null;
 
     const poll = async () => {
+      if (sseActiveRef.current) return; // SSE is primary — skip Gist when connected
       try {
         const res = await fetch(`/api/minehost/server?gist_id=${gist_id}`, { cache: "no-store" });
         if (!res.ok) { setConnected(false); return; }
@@ -156,8 +278,6 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         setConnected(data.reachable ?? false);
         setStage(data.stage ?? null);
 
-        // Propagate server info to parent
-        // Always propagate full server info, even when no log changes
         onStatusUpdateRef.current?.({
           running: data.running ?? false,
           server_ip: data.server_ip ?? null,
@@ -202,16 +322,28 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   }, [gist_id]);
 
   const sendCommand = async () => {
-    if (!input.trim() || sending || !gist_id) return;
+    const canSendDirect = sseActiveRef.current && !!controlUrl;
+    const canSend = canSendDirect || !!gist_id;
+    if (!input.trim() || sending || !canSend) return;
     const cmd = input.trim();
     setInput("");
     setSending(true);
     try {
-      await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: cmd }),
-      });
+      if (canSendDirect) {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (cmdSecretRef.current) headers["X-Minehost-Secret"] = cmdSecretRef.current;
+        await fetch(`${controlUrl}/cmd`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ command: cmd }),
+        });
+      } else {
+        await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: cmd }),
+        });
+      }
     } finally {
       setSending(false);
     }
@@ -221,6 +353,8 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
     if (e.key === "Enter") sendCommand();
   };
 
+  const canInput = sseActive ? !!controlUrl : !!gist_id;
+
   return (
     <div className="flex flex-col h-full bg-ink-surface border border-ink-border rounded-sm overflow-hidden">
       {/* Header */}
@@ -228,7 +362,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         <span className="text-xs font-mono text-paper/40 uppercase tracking-widest">Console</span>
         <span className={cn("flex items-center gap-1.5 text-xs font-mono", connected ? "text-emerald-400" : "text-paper/30")}>
           <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-emerald-400" : "bg-paper/20")} />
-          {connected ? "conectado" : gist_id ? "aguardando servidor..." : "sem conexão"}
+          {connected ? "conectado" : (gist_id || controlUrl) ? "aguardando servidor..." : "sem conexão"}
         </span>
       </div>
 
@@ -243,7 +377,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
           connected
             ? <StartupStages stage={stage} elapsed={elapsedSec} />
             : <p className="text-paper/20 font-mono text-xs">
-                {gist_id ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
+                {(gist_id || controlUrl) ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
               </p>
         ) : (
           lines.map((line, i) => (
@@ -265,11 +399,11 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
           onKeyDown={handleKeyDown}
           placeholder="say Olá, mundo!"
           className="flex-1 bg-transparent text-sm font-mono text-paper/80 placeholder:text-paper/20 focus:outline-none"
-          disabled={sending || !gist_id}
+          disabled={sending || !canInput}
         />
         <button
           onClick={sendCommand}
-          disabled={!input.trim() || sending || !gist_id}
+          disabled={!input.trim() || sending || !canInput}
           className="text-xs font-mono text-paper/30 hover:text-gold disabled:opacity-30 transition-colors duration-150 shrink-0"
         >
           enviar
