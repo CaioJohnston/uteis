@@ -123,6 +123,10 @@ export default function MineHostPage() {
 function MineHostContent() {
   const [state, setState] = useState<PageState>({ tag: "loading" });
   const [serverInfo, setServerInfo] = useState<ServerInfo>(EMPTY_SERVER_INFO);
+  // Merge partial updates to avoid wiping existing fields (e.g. server_ip from polling)
+  const mergeServerInfo = useCallback((partial: Partial<ServerInfo>) => {
+    setServerInfo((prev) => ({ ...prev, ...partial }));
+  }, []);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const searchParams = useSearchParams();
@@ -153,9 +157,9 @@ function MineHostContent() {
     startRetriesRef.current = 0;
 
     if (space.state === "Available" && gist_id) {
-      const statusRes = await fetch(`/api/minehost/server?gist_id=${gist_id}`).catch(() => null);
+      const statusRes = await fetch(`/api/minehost/server?gist_id=${gist_id}`, { cache: "no-store" }).catch(() => null);
       const statusData = statusRes?.ok ? await statusRes.json().catch(() => ({})) : {};
-      setServerInfo({
+      mergeServerInfo({
         running: statusData.running ?? false,
         server_ip: statusData.server_ip ?? null,
         playit_claim: statusData.playit_claim ?? null,
@@ -165,12 +169,12 @@ function MineHostContent() {
     }
 
     setState({ tag: "console", codespace: space, gist_id });
-  }, []);
+  }, [mergeServerInfo]);
 
   // ── Find gist for a codespace (fallback when localStorage has no gist_id) ──
 
   const findGistId = useCallback(async (codespaceName: string): Promise<string> => {
-    const res = await fetch("/api/minehost/gist/find?name=" + codespaceName).catch(() => null);
+    const res = await fetch("/api/minehost/gist/find?name=" + codespaceName, { cache: "no-store" }).catch(() => null);
     if (!res?.ok) return "";
     const data = await res.json().catch(() => ({}));
     return data.gist_id ?? "";
@@ -179,7 +183,7 @@ function MineHostContent() {
   // ── Fetch specific codespace by name ──────────────────────────────────────
 
   const refreshCodespace = useCallback(async (name: string, gist_id: string) => {
-    const res = await fetch(`/api/minehost/codespace?name=${name}`);
+    const res = await fetch(`/api/minehost/codespace?name=${name}`, { cache: "no-store" });
     if (res.status === 401) { setState({ tag: "unauthenticated" }); return; }
     if (!res.ok) { clearSession(); setState({ tag: "no-server" }); return; }
     const data = await res.json();
@@ -189,7 +193,7 @@ function MineHostContent() {
   // ── Initial load ──────────────────────────────────────────────────────────
 
   const loadCodespaces = useCallback(async () => {
-    const res = await fetch("/api/minehost/codespace");
+    const res = await fetch("/api/minehost/codespace", { cache: "no-store" });
     if (res.status === 401) { setState({ tag: "unauthenticated" }); return; }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -278,6 +282,8 @@ function MineHostContent() {
       startRetriesRef.current = START_SHUTDOWN_TOLERANCE;
       const started = (data as { codespace?: Codespace }).codespace ?? { ...state.codespace, state: "Starting" };
       setState({ tag: "provisioning", codespace: started, gist_id: state.gist_id });
+      // Immediate refresh so the console appears right away
+      setTimeout(() => refreshCodespace(state.codespace.name, state.gist_id), 2000);
     } finally {
       setActionLoading(false);
     }
@@ -297,6 +303,7 @@ function MineHostContent() {
           ? { ...prev, codespace: { ...prev.codespace, state: "ShuttingDown" } }
           : prev
       );
+      // Merge with empty to reset, but preserve nothing (clear all)
       setServerInfo(EMPTY_SERVER_INFO);
       setTimeout(loadCodespaces, 6000);
     } finally {
@@ -549,11 +556,11 @@ function MineHostContent() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] lg:grid-rows-1 lg:h-[calc(100vh-22rem)] gap-6">
               {/* Console panel */}
               <div className="h-[500px] lg:h-full">
-                {state.codespace.state === "Available" ? (
+                {state.codespace.state === "Available" || state.codespace.state === "Shutdown" ? (
                   <ConsolePanel
                     codespace={state.codespace.name}
                     gist_id={state.gist_id}
-                    onStatusUpdate={setServerInfo}
+                    onStatusUpdate={(info) => setServerInfo((prevInfo) => ({ ...prevInfo, ...info }))}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full bg-ink-surface border border-ink-border rounded-sm text-paper/30 font-mono text-sm">

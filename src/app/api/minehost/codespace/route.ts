@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
   if (name) {
     const res = await fetch(`${GITHUB_API}/user/codespaces/${name}`, {
       headers: ghHeaders(token),
+      cache: "no-store",
     });
     if (res.status === 401) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (!res.ok) return NextResponse.json({ error: "Not found" }, { status: res.status });
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
   // List all — filter by template repo to find existing MineHost codespace on page load
   const res = await fetch(`${GITHUB_API}/user/codespaces?per_page=100`, {
     headers: ghHeaders(token),
+    cache: "no-store",
   });
 
   if (res.status === 401) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

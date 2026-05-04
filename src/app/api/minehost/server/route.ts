@@ -19,6 +19,7 @@ async function readGist(token: string, gist_id: string) {
   const res = await fetch(`${GITHUB_API}/gists/${gist_id}`, {
     headers: ghJson(token),
     signal: AbortSignal.timeout(8000),
+    cache: "no-store",
   });
   if (!res.ok) return null;
   const data = await res.json();
@@ -33,6 +34,7 @@ async function writeGist(token: string, gist_id: string, state: Record<string, u
     headers: ghJson(token),
     body: JSON.stringify({ files: { "state.json": { content: JSON.stringify(state) } } }),
     signal: AbortSignal.timeout(8000),
+    cache: "no-store",
   });
 }
 

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       "X-GitHub-Api-Version": "2022-11-28",
     },
     signal: AbortSignal.timeout(8000),
+    cache: "no-store",
   });
 
   if (!res.ok) return NextResponse.json({ gist_id: null });

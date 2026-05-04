@@ -129,15 +129,18 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
   useEffect(() => {
     if (!gist_id) return;
 
+    // Reset all state when gist_id changes (codespace restart, new server, etc.)
     cursorRef.current = 0;
     prevTailRef.current = "";
     setLines([]);
     setStage(null);
     setConnected(false);
+    setElapsedSec(0);
+    connectedAtRef.current = null;
 
     const poll = async () => {
       try {
-        const res = await fetch(`/api/minehost/server?gist_id=${gist_id}`);
+        const res = await fetch(`/api/minehost/server?gist_id=${gist_id}`, { cache: "no-store" });
         if (!res.ok) { setConnected(false); return; }
         const data = await res.json() as {
           reachable?: boolean;
@@ -154,6 +157,7 @@ export function ConsolePanel({ codespace, gist_id, onStatusUpdate }: Props) {
         setStage(data.stage ?? null);
 
         // Propagate server info to parent
+        // Always propagate full server info, even when no log changes
         onStatusUpdateRef.current?.({
           running: data.running ?? false,
           server_ip: data.server_ip ?? null,
