@@ -127,6 +127,15 @@ export async function POST(req: NextRequest) {
     ...(playitToken ? { MINEHOST_PLAYIT_TOKEN: playitToken } : {}),
   };
 
+  // If no playit token provided, delete any stale MINEHOST_PLAYIT_TOKEN from previous runs.
+  // Stale secrets persist across Codespace creations and would incorrectly trigger Fluxo A.
+  if (!playitToken) {
+    fetch(`${GITHUB_API}/user/codespaces/secrets/MINEHOST_PLAYIT_TOKEN`, {
+      method: "DELETE",
+      headers: ghHeaders(token),
+    }).catch(() => {});
+  }
+
   const secretResults = await Promise.all(
     Object.entries(secrets).map(async ([name, value]) => {
       const encrypted_value = await encryptSecret(publicKey, value);
