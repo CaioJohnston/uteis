@@ -362,7 +362,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
         <span className="text-xs font-mono text-paper/40 uppercase tracking-widest">Console</span>
         <span className={cn("flex items-center gap-1.5 text-xs font-mono", connected ? "text-emerald-400" : "text-paper/30")}>
           <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-emerald-400" : "bg-paper/20")} />
-          {connected ? "conectado" : (gist_id || controlUrl) ? "aguardando servidor..." : "sem conexão"}
+          {connected ? (sseActive ? "SSE" : "Gist") : (gist_id || controlUrl) ? "aguardando servidor..." : "sem conexão"}
         </span>
       </div>
 
