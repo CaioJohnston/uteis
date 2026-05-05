@@ -9,10 +9,10 @@ export const tools: Tool[] = [
   {
     id: "9",
     slug: "minehost",
-    name: "MineHost",
+    name: "Git-Craft",
     description:
       "Crie e gerencie um servidor Minecraft via GitHub Codespaces. Suporta Vanilla, Paper, Fabric e Forge. Console em tempo real no navegador.",
-    longDescription: `O **MineHost** permite criar e controlar um servidor Minecraft usando GitHub Codespaces como infraestrutura — sem VPS, sem configuração de rede, sem cliente de SSH.
+    longDescription: `O **Git-Craft** permite criar e controlar um servidor Minecraft usando GitHub Codespaces como infraestrutura — sem VPS, sem configuração de rede, sem cliente de SSH.
 
 **Como funciona:**
 1. Autentique com sua conta GitHub
@@ -26,13 +26,14 @@ export const tools: Tool[] = [
 - **Paper** — fork otimizado para performance
 - **Fabric** — plataforma de mods leve
 - **Forge** — plataforma de mods clássica
+- **CurseForge** — modpacks
 
 **Requisitos:**
-- Conta GitHub com acesso a Codespaces (plano gratuito inclui 60h/mês)
+- Conta GitHub com acesso a Codespaces (plano gratuito inclui 120h/mês)
 
 > O servidor fica na sua conta GitHub. Você controla tudo.`,
     tags: ["gaming", "infra", "devtools"],
-    status: "experimental",
+    status: "active",
     visibility: "public",
     hostingMode: "embedded",
     href: "/tools/minehost/usar",
@@ -41,10 +42,10 @@ export const tools: Tool[] = [
     createdAt: "2026-05-02",
     i18n: {
       en: {
-        name: "MineHost",
+        name: "Git-Craft",
         description:
           "Create and manage a Minecraft server via GitHub Codespaces. Supports Vanilla, Paper, Fabric and Forge. Real-time console in the browser.",
-        longDescription: `**MineHost** lets you create and control a Minecraft server using GitHub Codespaces as infrastructure — no VPS, no network config, no SSH client.
+        longDescription: `**Git-Craft** lets you create and control a Minecraft server using GitHub Codespaces as infrastructure — no VPS, no network config, no SSH client.
 
 **How it works:**
 1. Authenticate with your GitHub account
@@ -58,9 +59,10 @@ export const tools: Tool[] = [
 - **Paper** — performance-optimized fork
 - **Fabric** — lightweight mod platform
 - **Forge** — classic mod platform
+- **CurseForge** — modpacks
 
 **Requirements:**
-- GitHub account with Codespaces access (free plan includes 60h/month)
+- GitHub account with Codespaces access (free plan includes 120h/month)
 
 > The server lives in your GitHub account. You control everything.`,
       },
