@@ -136,6 +136,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
     let cancelled = false;
     let es: EventSource | null = null;
     let statusIntervalId: ReturnType<typeof setInterval> | null = null;
+    let retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const pollDirectStatus = async () => {
       if (cancelled) return;
@@ -228,6 +229,8 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           es?.close();
           es = null;
           if (statusIntervalId) { clearInterval(statusIntervalId); statusIntervalId = null; }
+          // SSE dropped — retry after 5s (Gist polling takes over in the meantime)
+          retryTimeoutId = setTimeout(connectSSE, 5000);
         };
 
         pollDirectStatus();
@@ -235,7 +238,10 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
 
       } catch {
         clearTimeout(probeTimeout);
-        // Probe timed out or failed — Gist polling is the fallback
+        if (!cancelled) {
+          // Probe timed out or failed — retry in 15s; Gist polling is the fallback until then
+          retryTimeoutId = setTimeout(connectSSE, 15000);
+        }
       }
     };
 
@@ -245,6 +251,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
       cancelled = true;
       es?.close();
       if (statusIntervalId) clearInterval(statusIntervalId);
+      if (retryTimeoutId) clearTimeout(retryTimeoutId);
       sseActiveRef.current = false;
       setSseActive(false);
     };
