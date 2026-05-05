@@ -561,7 +561,7 @@ function MineHostContent() {
                   <ConsolePanel
                     codespace={state.codespace.name}
                     gist_id={state.gist_id}
-                    controlUrl={state.codespace.web_url?.replace(".github.dev", "-8081.app.github.dev")}
+                    controlUrl={`/api/minehost/proxy/${state.codespace.name}`}
                     onStatusUpdate={(info) => setServerInfo((prevInfo) => ({ ...prevInfo, ...info }))}
                   />
                 ) : (
