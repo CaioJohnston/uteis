@@ -26,7 +26,8 @@
 
 | Ferramenta                     | Modo     | Status           | O que faz                                                                                                                                                  |
 | ------------------------------ | -------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Open ú.**             | embedded | `active`       | Chat, client-side, com IA configurável. Conecte sua própria API (OpenAI, Anthropic ou qualquer endpoint compatível) e converse diretamente no navegador |
+| **Git-Craft**           | embedded | `experimental` | Crie e gerencie um servidor Minecraft via GitHub Codespaces. Console em tempo real no navegador, sem VPS nem SSH                                         |
+| **Open ú.**             | embedded | `active`       | Chat client-side com IA configurável. Conecte sua própria API (OpenAI, Anthropic ou qualquer endpoint compatível) e converse diretamente no navegador |
 | **Gastômetro**          | embedded | `active`       | Importe o CSV do Nubank e veja seus gastos organizados por categoria, tudo processado localmente                                                           |
 | **Saucerful of Secrets** | download | `active`       | Criptografador de arquivos portátil com AES-256-GCM + Argon2id; roda a partir de pen drive, sem instalação                                              |
 | **Tapicius**             | download | `active`       | AutoClicker para Windows com múltiplos pontos de clique                                                                                                   |
@@ -51,8 +52,19 @@
 | Linguagem | TypeScript strict                         |
 | Estilos   | Tailwind CSS                              |
 | Tema      | next-themes — dark/light, padrão escuro |
+| 3D        | Three.js                                  |
 | Deploy    | Vercel Hobby                              |
 | Fontes    | Cormorant · Manrope · JetBrains Mono    |
+
+---
+
+## Variáveis de ambiente
+
+```bash
+# Copie para .env.local e preencha os valores
+# Obter chave em: https://aistudio.google.com/apikey
+GEMINI_API_KEY=   # Usada por Sílex e outras tools com IA
+```
 
 ---
 
