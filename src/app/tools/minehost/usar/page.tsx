@@ -225,16 +225,18 @@ function MineHostContent() {
     loadCodespaces();
   }, [loadCodespaces]);
 
-  // ── Polling for provisioning state ────────────────────────────────────────
+  // ── Polling for provisioning and shutdown states ──────────────────────────
 
   useEffect(() => {
-    if (state.tag !== "provisioning") {
+    const isShuttingDown = state.tag === "console" && state.codespace.state === "ShuttingDown";
+    if (state.tag !== "provisioning" && !isShuttingDown) {
       if (pollRef.current) clearTimeout(pollRef.current);
       return;
     }
     const { name } = state.codespace;
     const { gist_id } = state;
-    pollRef.current = setTimeout(() => refreshCodespace(name, gist_id), 10_000);
+    const delay = isShuttingDown ? 5_000 : 10_000;
+    pollRef.current = setTimeout(() => refreshCodespace(name, gist_id), delay);
     return () => { if (pollRef.current) clearTimeout(pollRef.current); };
   }, [state, refreshCodespace]);
 
@@ -305,7 +307,6 @@ function MineHostContent() {
       );
       // Merge with empty to reset, but preserve nothing (clear all)
       setServerInfo(EMPTY_SERVER_INFO);
-      setTimeout(loadCodespaces, 6000);
     } finally {
       setActionLoading(false);
     }
@@ -560,6 +561,7 @@ function MineHostContent() {
                   <ConsolePanel
                     codespace={state.codespace.name}
                     gist_id={state.gist_id}
+                    controlUrl={`/api/minehost/proxy/${state.codespace.name}`}
                     onStatusUpdate={(info) => setServerInfo((prevInfo) => ({ ...prevInfo, ...info }))}
                   />
                 ) : (
