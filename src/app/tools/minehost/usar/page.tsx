@@ -604,10 +604,14 @@ function MineHostContent() {
             {/*
               lg:grid-rows-1 makes the single row track use 1fr (definite size),
               which is required for h-full on grid children to resolve correctly.
-              lg:h-[calc(100vh-22rem)] gives explicit height independent of flex chain.
-              Mobile: auto height, each panel 500px, page scrolls normally.
+              lg:h-[calc(100vh-15rem)] gives explicit height independent of flex
+              chain. Was 22rem before — bumped because the side panel needs to
+              fit 4 cards + 2 button groups (Servidor MC + Codespace) without
+              clipping under the footer.
+              Mobile: console fixa em 500px; side panel auto-cresce com o
+              conteúdo (estava clipando com 500px).
             */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] lg:grid-rows-1 lg:h-[calc(100vh-22rem)] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] lg:grid-rows-1 lg:h-[calc(100vh-15rem)] gap-6">
               {/* Console panel — only when the Codespace is up. In Shutdown the
                   server isn't running and the previously-buffered lines are
                   meaningless (and confusing — looks like the panel is "stuck"
@@ -628,8 +632,9 @@ function MineHostContent() {
                 )}
               </div>
 
-              {/* Dashboard */}
-              <div className="h-[500px] lg:h-full">
+              {/* Dashboard — sem altura fixa no mobile pra que cards + botões
+                  caibam sem clipar (a soma natural passa de 500px). */}
+              <div className="lg:h-full">
                 <ServerStatus
                   codespaceState={state.codespace.state}
                   serverInfo={serverInfo}
