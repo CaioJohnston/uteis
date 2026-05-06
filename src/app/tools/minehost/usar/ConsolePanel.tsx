@@ -115,6 +115,10 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
   // Sticky once either transport has succeeded — distinguishes "never connected
   // yet" (badge: aguardando…) from "was connected, now broken" (badge: offline).
   const everConnectedRef = useRef(false);
+  // Timestamp of the last "limpar" click. Gist polls older than this are
+  // discarded — protects against the 0-5 s window where the Gist still holds
+  // the pre-clear snapshot and would otherwise refill the panel.
+  const clearedAtRef = useRef(0);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -343,6 +347,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
           log_delta?: LogDelta | null;
           session_id?: string | null;
           last_heartbeat_at?: number | null;
+          updated?: number;
           server_ip?: string | null;
           playit_claim?: string | null;
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
@@ -352,6 +357,13 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
         setConnected(reachable);
         if (reachable) everConnectedRef.current = true;
         setStage(data.stage ?? null);
+
+        // Bug guard: between the click on "limpar" and the server's next
+        // syncGist tick (up to 5 s), the Gist still holds the pre-clear
+        // snapshot — accepting it here would refill the panel.
+        if (clearedAtRef.current > 0 && (data.updated ?? 0) < clearedAtRef.current) {
+          return;
+        }
 
         // Session boundary first: if the server has minted a new id, drop our
         // local view before we try to merge anything from the snapshot.
@@ -426,6 +438,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
     setLines([]);
     cursorRef.current = 0;
     prevTailRef.current = "";
+    clearedAtRef.current = Date.now();
     try {
       const canDirect = sseActiveRef.current && !!controlUrl;
       if (canDirect) {

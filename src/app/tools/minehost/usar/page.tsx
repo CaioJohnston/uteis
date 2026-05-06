@@ -607,9 +607,12 @@ function MineHostContent() {
               Mobile: auto height, each panel 500px, page scrolls normally.
             */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] lg:grid-rows-1 lg:h-[calc(100vh-22rem)] gap-6">
-              {/* Console panel */}
+              {/* Console panel — only when the Codespace is up. In Shutdown the
+                  server isn't running and the previously-buffered lines are
+                  meaningless (and confusing — looks like the panel is "stuck"
+                  on old data). */}
               <div className="h-[500px] lg:h-full">
-                {state.codespace.state === "Available" || state.codespace.state === "Shutdown" ? (
+                {state.codespace.state === "Available" ? (
                   <ConsolePanel
                     codespace={state.codespace.name}
                     gist_id={state.gist_id}

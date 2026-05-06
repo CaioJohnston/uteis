@@ -102,7 +102,12 @@ export function ServerStatus({
     now - last_heartbeat_at > HEARTBEAT_UNSTABLE_MS;
 
   return (
-    <div className="space-y-3 h-full flex flex-col">
+    <div className="h-full flex flex-col gap-3 min-h-0">
+
+      {/* Cards (Status / IP / Config / RAM) ficam num container com scroll
+          interno para que crescer não empurre os botões para fora do
+          container — o que estava clipando sob o footer da página. */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
 
       {/* ── Status ── */}
       <div className="bg-ink-surface border border-ink-border rounded-sm p-4 space-y-2.5">
@@ -145,7 +150,8 @@ export function ServerStatus({
         )}
       </div>
 
-      {/* ── IP para conectar ── */}
+      {/* ── IP para conectar — só faz sentido enquanto o Codespace está vivo ── */}
+      {isAvailable && (
       <div className="bg-ink-surface border border-ink-border rounded-sm p-4 space-y-2.5">
         <p className="text-xs font-mono text-paper/30 uppercase tracking-widest">IP do servidor</p>
         {server_ip ? (
@@ -177,6 +183,7 @@ export function ServerStatus({
           </p>
         )}
       </div>
+      )}
 
       {/* ── Config do servidor ── */}
       {config && (
@@ -195,8 +202,8 @@ export function ServerStatus({
         </div>
       )}
 
-      {/* ── RAM ── */}
-      {ram && (
+      {/* ── RAM — número vem do Codespace; só faz sentido se ele tá vivo ── */}
+      {isAvailable && ram && (
         <div className="bg-ink-surface border border-ink-border rounded-sm p-4 space-y-2.5">
           <div className="flex items-center justify-between">
             <p className="text-xs font-mono text-paper/30 uppercase tracking-widest">RAM</p>
@@ -220,11 +227,11 @@ export function ServerStatus({
         </div>
       )}
 
-      {/* ── Spacer ── */}
-      <div className="flex-1" />
+      </div>{/* /scroll container dos cards */}
 
-      {/* ── Ações ── */}
-      <div className="space-y-4">
+      {/* Botões fixos abaixo do scroll, fora dele. shrink-0 garante que não
+          encolhem e não saem do container quando o conteúdo acima é grande. */}
+      <div className="space-y-4 shrink-0">
         {/* MC server controls — only meaningful when the Codespace is alive */}
         {isAvailable && (
           <div className="space-y-2">
