@@ -24,6 +24,10 @@ export interface ServerInfo {
   // Epoch ms of the last log line emitted by the MC server, surfaced from
   // /status and the Gist state. Used to detect "running but hung" servers.
   last_heartbeat_at?: number | null;
+  // Startup stage from the back-end (deps/download/install/starting/null).
+  // Lets us tell "iniciando..." from "parado" — both have running=false but
+  // only the former has a non-null stage.
+  stage?: string | null;
 }
 
 // If the server claims running=true but has emitted nothing in this many ms,
@@ -80,11 +84,15 @@ export function ServerStatus({
   onRestart,
   loading,
 }: Props) {
-  const { running, server_ip, playit_claim, config, ram, last_heartbeat_at } = serverInfo;
+  const { running, server_ip, playit_claim, config, ram, last_heartbeat_at, stage } = serverInfo;
   const isAvailable = codespaceState === "Available";
   const isStopped = codespaceState === "Shutdown";
   const isShuttingDown = codespaceState === "ShuttingDown";
   const isTransitioning = !isAvailable && !isStopped && !isShuttingDown && codespaceState !== "Failed";
+  // "iniciando..." só quando a back-end reportou um estágio explícito de
+  // startup. Sem isso, o servidor não está em transição — está parado.
+  const mcStarting = isAvailable && !running && !!stage;
+  const mcStopped  = isAvailable && !running && !stage;
 
   // Derive a "stale" flag from last_heartbeat_at relative to now. We re-render
   // every 5 s while the heartbeat is fresh so the badge flips automatically
@@ -102,12 +110,12 @@ export function ServerStatus({
     now - last_heartbeat_at > HEARTBEAT_UNSTABLE_MS;
 
   return (
-    <div className="h-full flex flex-col gap-3 min-h-0">
+    <div className="h-full flex flex-col gap-3">
 
-      {/* Cards (Status / IP / Config / RAM) ficam num container com scroll
-          interno para que crescer não empurre os botões para fora do
-          container — o que estava clipando sob o footer da página. */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
+      {/* Cards (Status / IP / Config / RAM) ficam visíveis no topo, sem
+          scroll. shrink-0 garante que não encolhem; o spacer abaixo absorve
+          o espaço extra empurrando os botões para o fim. */}
+      <div className="space-y-3 shrink-0">
 
       {/* ── Status ── */}
       <div className="bg-ink-surface border border-ink-border rounded-sm p-4 space-y-2.5">
@@ -119,8 +127,10 @@ export function ServerStatus({
               ? "bg-emerald-400 shadow-[0_0_6px_theme(colors.emerald.400)]"
               : isAvailable && running && heartbeatStale
               ? "bg-amber-400 animate-pulse"
-              : isAvailable && !running
+              : mcStarting
               ? "bg-amber-400 animate-pulse"
+              : mcStopped
+              ? "bg-paper/20"
               : isStopped
               ? "bg-paper/20"
               : isShuttingDown || isTransitioning
@@ -132,10 +142,12 @@ export function ServerStatus({
               ? "online"
               : isAvailable && running && heartbeatStale
               ? "instável"
-              : isAvailable && !running
+              : mcStarting
               ? "iniciando..."
-              : isStopped
+              : mcStopped
               ? "parado"
+              : isStopped
+              ? "codespace parado"
               : isShuttingDown
               ? "desligando..."
               : isTransitioning
@@ -227,10 +239,12 @@ export function ServerStatus({
         </div>
       )}
 
-      </div>{/* /scroll container dos cards */}
+      </div>{/* /cards */}
 
-      {/* Botões fixos abaixo do scroll, fora dele. shrink-0 garante que não
-          encolhem e não saem do container quando o conteúdo acima é grande. */}
+      {/* Spacer para empurrar os botões para o fim do painel. */}
+      <div className="flex-1" />
+
+      {/* Botões — sempre visíveis, fixos no fim. */}
       <div className="space-y-4 shrink-0">
         {/* MC server controls — only meaningful when the Codespace is alive */}
         {isAvailable && (

@@ -94,6 +94,9 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
   const [sseActive, setSseActive] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
+  // Local copy of the MC running flag — used to render the "parado" placeholder
+  // and disable the command input when the server isn't accepting commands.
+  const [running, setRunning] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(0);
@@ -204,6 +207,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
         };
         handleSessionId(d.session_id);
         setStage(d.stage ?? null);
+        setRunning(d.running ?? false);
         onStatusUpdateRef.current?.({
           running: d.running ?? false,
           server_ip: d.server_ip ?? null,
@@ -211,6 +215,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
           config: d.config ?? null,
           ram: d.ram ?? null,
           last_heartbeat_at: d.last_heartbeat_at ?? null,
+          stage: d.stage ?? null,
         });
       } catch {}
     };
@@ -247,6 +252,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
         onCmdSecretRef.current?.(statusData.cmd_secret ?? null);
         handleSessionId(statusData.session_id);
         setStage(statusData.stage ?? null);
+        setRunning(statusData.running ?? false);
         onStatusUpdateRef.current?.({
           running: statusData.running ?? false,
           server_ip: statusData.server_ip ?? null,
@@ -254,6 +260,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
           config: statusData.config ?? null,
           ram: statusData.ram ?? null,
           last_heartbeat_at: statusData.last_heartbeat_at ?? null,
+          stage: statusData.stage ?? null,
         });
 
         es = new EventSource(`${controlUrl}/sse`);
@@ -369,6 +376,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
         // local view before we try to merge anything from the snapshot.
         handleSessionId(data.session_id);
 
+        setRunning(data.running ?? false);
         onStatusUpdateRef.current?.({
           running: data.running ?? false,
           server_ip: data.server_ip ?? null,
@@ -376,6 +384,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
           config: data.config ?? null,
           ram: data.ram ?? null,
           last_heartbeat_at: data.last_heartbeat_at ?? null,
+          stage: data.stage ?? null,
         });
 
         const log = data.log ?? [];
@@ -491,7 +500,12 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
     if (e.key === "Enter") sendCommand();
   };
 
-  const canInput = sseActive ? !!controlUrl : !!gist_id;
+  // Servidor MC parado quando temos conexão com o control-server (estamos
+  // recebendo /status), mas o servidor não está rodando e não há um stage
+  // de startup em andamento. Aí não faz sentido mostrar console nem aceitar
+  // comandos (eles seriam silenciosamente perdidos pela tmux session morta).
+  const mcStopped = connected && !running && !stage;
+  const canInput = !mcStopped && (sseActive ? !!controlUrl : !!gist_id);
 
   // Tri-state connection badge (issue #2).
   //   live      — SSE channel up, sub-second log streaming.
@@ -552,12 +566,27 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, o
         className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5 min-h-0"
         style={{ fontFamily: "var(--font-jetbrains)", fontSize: "0.72rem", lineHeight: "1.6" }}
       >
-        {lines.length === 0 ? (
-          connected
-            ? <StartupStages stage={stage} elapsed={elapsedSec} />
-            : <p className="text-paper/20 font-mono text-xs">
-                {(gist_id || controlUrl) ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
-              </p>
+        {mcStopped ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div className="space-y-2">
+              <p className="text-sm font-mono text-paper/50">servidor MC parado</p>
+              <p className="text-xs font-mono text-paper/30">clique em &quot;iniciar&quot; no painel ao lado para subir o servidor</p>
+            </div>
+          </div>
+        ) : lines.length === 0 ? (
+          connected ? (
+            // Só mostra os stages de startup quando o backend reportou estágio
+            // explícito (deps/download/install/starting). Sem isso, o painel
+            // vazio é só "nada por aqui ainda" — caso típico após clicar
+            // "limpar" em um servidor que já estava rodando.
+            stage
+              ? <StartupStages stage={stage} elapsed={elapsedSec} />
+              : <p className="text-paper/20 font-mono text-xs">nada por aqui ainda</p>
+          ) : (
+            <p className="text-paper/20 font-mono text-xs">
+              {(gist_id || controlUrl) ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
+            </p>
+          )
         ) : (
           lines.map((line, i) => (
             <p key={i} className={cn("whitespace-pre-wrap break-all", colorLine(line))}>

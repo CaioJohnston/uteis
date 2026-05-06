@@ -46,7 +46,7 @@ const PROVISIONING_STATES = new Set([
   "Updating",
 ]);
 
-const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, playit_claim: null, config: null, ram: null, last_heartbeat_at: null };
+const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, playit_claim: null, config: null, ram: null, last_heartbeat_at: null, stage: null };
 
 type StoredSession = { name: string; gist_id: string };
 
@@ -171,6 +171,7 @@ function MineHostContent() {
         config: statusData.config ?? null,
         ram: statusData.ram ?? null,
         last_heartbeat_at: statusData.last_heartbeat_at ?? null,
+        stage: statusData.stage ?? null,
       });
     }
 
