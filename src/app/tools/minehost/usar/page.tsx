@@ -46,7 +46,7 @@ const PROVISIONING_STATES = new Set([
   "Updating",
 ]);
 
-const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, playit_claim: null, config: null, ram: null };
+const EMPTY_SERVER_INFO: ServerInfo = { running: false, server_ip: null, playit_claim: null, config: null, ram: null, last_heartbeat_at: null };
 
 type StoredSession = { name: string; gist_id: string };
 
@@ -134,6 +134,11 @@ function MineHostContent() {
   // After clicking start, tolerate up to N polls returning "Shutdown" before giving up
   const startRetriesRef = useRef(0);
   const START_SHUTDOWN_TOLERANCE = 3;
+  // cmd_secret learned from /status via ConsolePanel. When set, MC lifecycle
+  // actions (start/stop/restart) hit the proxy directly for sub-second
+  // response. When null, they fall through to the Gist `pending_cmd` channel
+  // (~5 s round-trip via syncGist).
+  const cmdSecretRef = useRef<string | null>(null);
 
 
   // ── Apply codespace state to page state ──────────────────────────────────
@@ -165,6 +170,7 @@ function MineHostContent() {
         playit_claim: statusData.playit_claim ?? null,
         config: statusData.config ?? null,
         ram: statusData.ram ?? null,
+        last_heartbeat_at: statusData.last_heartbeat_at ?? null,
       });
     }
 
@@ -312,22 +318,68 @@ function MineHostContent() {
     }
   };
 
+  // Sends an MC lifecycle action: prefer the direct proxy path (when we know
+  // cmd_secret), fall back to writing pending_cmd into the Gist. Both paths
+  // hit the same control-server functions, so behaviour is identical except
+  // for latency.
+  const dispatchMcAction = async (directPath: string, gistCmd: string) => {
+    if (state.tag !== "console") return;
+    if (cmdSecretRef.current) {
+      try {
+        const r = await fetch(`/api/minehost/proxy/${state.codespace.name}${directPath}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Minehost-Secret": cmdSecretRef.current },
+          body: "{}",
+        });
+        if (r.ok) return;
+      } catch {}
+    }
+    await fetch(`/api/minehost/server?gist_id=${state.gist_id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command: gistCmd }),
+    });
+  };
+
+  const handleStartMC = async () => {
+    if (state.tag !== "console") return;
+    setActionLoading(true);
+    try {
+      await dispatchMcAction("/server/start", "__minehost_start__");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleStopMC = () => {
+    if (state.tag !== "console") return;
+    setConfirmState({
+      title: "Parar servidor MC",
+      body: "O servidor Minecraft será parado. Jogadores conectados serão desconectados. O Codespace continua ativo.",
+      confirmLabel: "parar",
+      onConfirm: async () => {
+        setConfirmState(null);
+        setActionLoading(true);
+        try {
+          await dispatchMcAction("/server/stop", "__minehost_stop__");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
   const handleRestartMC = () => {
     if (state.tag !== "console") return;
-    const gist_id = state.gist_id;
     setConfirmState({
-      title: "Reiniciar servidor",
+      title: "Reiniciar servidor MC",
       body: "O servidor Minecraft será reiniciado. Jogadores conectados serão desconectados.",
       confirmLabel: "reiniciar",
       onConfirm: async () => {
         setConfirmState(null);
         setActionLoading(true);
         try {
-          await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ command: "__minehost_restart__" }),
-          });
+          await dispatchMcAction("/server/restart", "__minehost_restart__");
         } finally {
           setActionLoading(false);
         }
@@ -563,6 +615,7 @@ function MineHostContent() {
                     gist_id={state.gist_id}
                     controlUrl={`/api/minehost/proxy/${state.codespace.name}`}
                     onStatusUpdate={(info) => setServerInfo((prevInfo) => ({ ...prevInfo, ...info }))}
+                    onCmdSecret={(secret) => { cmdSecretRef.current = secret; }}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full bg-ink-surface border border-ink-border rounded-sm text-paper/30 font-mono text-sm">
@@ -580,6 +633,8 @@ function MineHostContent() {
                   onStart={handleStartCodespace}
                   onStop={handleStopCodespace}
                   onDelete={handleDelete}
+                  onStartMC={handleStartMC}
+                  onStopMC={handleStopMC}
                   onRestart={handleRestartMC}
                   loading={actionLoading}
                 />
