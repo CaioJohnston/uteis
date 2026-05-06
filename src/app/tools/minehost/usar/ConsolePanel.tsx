@@ -10,6 +10,7 @@ interface ServerInfo {
   config: { type?: string; version?: string; jvmArgs?: string } | null;
   ram: { usedMB: number; totalMB: number; percent: number } | null;
   last_heartbeat_at?: number | null;
+  stage?: string | null;
 }
 
 type LogDelta = { from: number; to: number; lines: string[] };
