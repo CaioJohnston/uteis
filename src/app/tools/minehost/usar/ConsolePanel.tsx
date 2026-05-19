@@ -9,13 +9,21 @@ interface ServerInfo {
   playit_claim: string | null;
   config: { type?: string; version?: string; jvmArgs?: string } | null;
   ram: { usedMB: number; totalMB: number; percent: number } | null;
+  last_heartbeat_at?: number | null;
+  stage?: string | null;
 }
+
+type LogDelta = { from: number; to: number; lines: string[] };
 
 interface Props {
   codespace: string;
   gist_id: string;
   controlUrl?: string;
   onStatusUpdate?: (info: ServerInfo) => void;
+  // Forwards the cmd_secret (read from /status) up to the page so MC lifecycle
+  // buttons in ServerStatus can hit the proxy directly. Falls back to Gist
+  // pending_cmd when the secret hasn't been seen yet.
+  onCmdSecret?: (secret: string | null) => void;
 }
 
 function colorLine(line: string): string {
@@ -78,14 +86,18 @@ function StartupStages({ stage, elapsed }: { stage: string | null; elapsed: numb
   );
 }
 
-export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }: Props) {
+export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate, onCmdSecret }: Props) {
   const [lines, setLines] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [connected, setConnected] = useState(false);
   const [sseActive, setSseActive] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
+  // Local copy of the MC running flag — used to render the "parado" placeholder
+  // and disable the command input when the server isn't accepting commands.
+  const [running, setRunning] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(0);
@@ -94,14 +106,42 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
   const connectedAtRef = useRef<number | null>(null);
   const onStatusUpdateRef = useRef(onStatusUpdate);
   onStatusUpdateRef.current = onStatusUpdate;
+  const onCmdSecretRef = useRef(onCmdSecret);
+  onCmdSecretRef.current = onCmdSecret;
   // Mutable refs for use inside async callbacks — avoids stale closures
   const sseActiveRef = useRef(false);
   const cmdSecretRef = useRef<string | null>(null);
+  // Tracks the active MC session_id so we can detect server restarts and clear
+  // the local view instead of mixing pre/post-restart logs (issue #2).
+  const currentSessionIdRef = useRef<string | null>(null);
+  // Exponential-backoff attempt counter for SSE reconnects.
+  const sseAttemptRef = useRef(0);
+  // Sticky once either transport has succeeded — distinguishes "never connected
+  // yet" (badge: aguardando…) from "was connected, now broken" (badge: offline).
+  const everConnectedRef = useRef(false);
+  // Timestamp of the last "limpar" click. Gist polls older than this are
+  // discarded — protects against the 0-5 s window where the Gist still holds
+  // the pre-clear snapshot and would otherwise refill the panel.
+  const clearedAtRef = useRef(0);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     autoScroll.current = scrollHeight - scrollTop - clientHeight < 40;
+  }, []);
+
+  // Reconciles the active session_id. When the server mints a new one (fresh
+  // start, restart, or external truncation of server.log), we discard the
+  // local view so old session lines can't leak into the new session — and so
+  // the snapshot from the Gist replays fresh instead of "reverting" mid-stream.
+  const handleSessionId = useCallback((id: string | null | undefined) => {
+    if (!id) return;
+    if (currentSessionIdRef.current && currentSessionIdRef.current !== id) {
+      setLines([]);
+      cursorRef.current = 0;
+      prevTailRef.current = "";
+    }
+    currentSessionIdRef.current = id;
   }, []);
 
   useEffect(() => {
@@ -129,7 +169,10 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
     return () => clearInterval(id);
   }, [connected, lines.length]);
 
-  // ── SSE — direct connection to control-server.js (primary path)
+  // ── SSE — direct connection to control-server.js (primary path).
+  // Reconnects with capped exponential backoff + jitter (3s → 60s ceiling).
+  // Counter resets to 0 on every successful SSE open, so a stable server
+  // recovers full responsiveness after a single dropout.
   useEffect(() => {
     if (!controlUrl) return;
 
@@ -137,6 +180,16 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
     let es: EventSource | null = null;
     let statusIntervalId: ReturnType<typeof setInterval> | null = null;
     let retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleRetry = () => {
+      if (cancelled) return;
+      const attempt = sseAttemptRef.current;
+      const exp = Math.min(3000 * 2 ** attempt, 60_000);
+      const jitter = exp * (Math.random() * 0.4 - 0.2); // ±20%
+      const delay = Math.max(500, Math.round(exp + jitter));
+      sseAttemptRef.current = attempt + 1;
+      retryTimeoutId = setTimeout(connectSSE, delay);
+    };
 
     const pollDirectStatus = async () => {
       if (cancelled) return;
@@ -150,14 +203,20 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
           stage?: string | null;
+          session_id?: string | null;
+          last_heartbeat_at?: number;
         };
+        handleSessionId(d.session_id);
         setStage(d.stage ?? null);
+        setRunning(d.running ?? false);
         onStatusUpdateRef.current?.({
           running: d.running ?? false,
           server_ip: d.server_ip ?? null,
           playit_claim: d.playit_claim ?? null,
           config: d.config ?? null,
           ram: d.ram ?? null,
+          last_heartbeat_at: d.last_heartbeat_at ?? null,
+          stage: d.stage ?? null,
         });
       } catch {}
     };
@@ -172,7 +231,10 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           cache: "no-store",
         });
         clearTimeout(probeTimeout);
-        if (!res.ok || cancelled) return;
+        if (!res.ok || cancelled) {
+          if (!cancelled) scheduleRetry();
+          return;
+        }
 
         const statusData = await res.json() as {
           running?: boolean;
@@ -182,17 +244,24 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
           cmd_secret?: string | null;
           stage?: string | null;
+          session_id?: string | null;
+          last_heartbeat_at?: number;
         };
         if (cancelled) return;
 
         cmdSecretRef.current = statusData.cmd_secret ?? null;
+        onCmdSecretRef.current?.(statusData.cmd_secret ?? null);
+        handleSessionId(statusData.session_id);
         setStage(statusData.stage ?? null);
+        setRunning(statusData.running ?? false);
         onStatusUpdateRef.current?.({
           running: statusData.running ?? false,
           server_ip: statusData.server_ip ?? null,
           playit_claim: statusData.playit_claim ?? null,
           config: statusData.config ?? null,
           ram: statusData.ram ?? null,
+          last_heartbeat_at: statusData.last_heartbeat_at ?? null,
+          stage: statusData.stage ?? null,
         });
 
         es = new EventSource(`${controlUrl}/sse`);
@@ -201,6 +270,8 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
         es.onopen = () => {
           if (cancelled) { es?.close(); return; }
           sseActiveRef.current = true;
+          sseAttemptRef.current = 0; // success — reset backoff
+          everConnectedRef.current = true;
           setSseActive(true);
           setConnected(true);
           if (connectedAtRef.current === null) connectedAtRef.current = Date.now();
@@ -229,8 +300,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           es?.close();
           es = null;
           if (statusIntervalId) { clearInterval(statusIntervalId); statusIntervalId = null; }
-          // SSE dropped — retry after 5s (Gist polling takes over in the meantime)
-          retryTimeoutId = setTimeout(connectSSE, 5000);
+          scheduleRetry();
         };
 
         pollDirectStatus();
@@ -238,10 +308,7 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
 
       } catch {
         clearTimeout(probeTimeout);
-        if (!cancelled) {
-          // Probe timed out or failed — retry in 15s; Gist polling is the fallback until then
-          retryTimeoutId = setTimeout(connectSSE, 15000);
-        }
+        if (!cancelled) scheduleRetry();
       }
     };
 
@@ -255,15 +322,19 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
       sseActiveRef.current = false;
       setSseActive(false);
     };
-  }, [controlUrl]);
+  }, [controlUrl, handleSessionId]);
 
-  // ── Polling — gist-based (fallback when SSE unavailable)
+  // ── Polling — gist-based (fallback when SSE unavailable).
+  // Prefers `log_delta` (new back-end, cursor-precise) over the snapshot
+  // `log` (older back-end, content-matched). Either way the session_id check
+  // runs first so a server restart doesn't get merged into the previous view.
   useEffect(() => {
     if (!gist_id) return;
 
-    // Reset all state when gist_id changes (codespace restart, new server, etc.)
+    // Reset all state when gist_id changes (codespace swap, new server, etc.)
     cursorRef.current = 0;
     prevTailRef.current = "";
+    currentSessionIdRef.current = null;
     setLines([]);
     setStage(null);
     setConnected(false);
@@ -281,37 +352,74 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
           stage?: string | null;
           log?: string[];
           cursor?: number;
+          log_delta?: LogDelta | null;
+          session_id?: string | null;
+          last_heartbeat_at?: number | null;
+          updated?: number;
           server_ip?: string | null;
           playit_claim?: string | null;
           config?: { type?: string; version?: string; jvmArgs?: string } | null;
           ram?: { usedMB: number; totalMB: number; percent: number } | null;
         };
-        setConnected(data.reachable ?? false);
+        const reachable = data.reachable ?? false;
+        setConnected(reachable);
+        if (reachable) everConnectedRef.current = true;
         setStage(data.stage ?? null);
 
+        // Bug guard: between the click on "limpar" and the server's next
+        // syncGist tick (up to 5 s), the Gist still holds the pre-clear
+        // snapshot — accepting it here would refill the panel.
+        if (clearedAtRef.current > 0 && (data.updated ?? 0) < clearedAtRef.current) {
+          return;
+        }
+
+        // Session boundary first: if the server has minted a new id, drop our
+        // local view before we try to merge anything from the snapshot.
+        handleSessionId(data.session_id);
+
+        setRunning(data.running ?? false);
         onStatusUpdateRef.current?.({
           running: data.running ?? false,
           server_ip: data.server_ip ?? null,
           playit_claim: data.playit_claim ?? null,
           config: data.config ?? null,
           ram: data.ram ?? null,
+          last_heartbeat_at: data.last_heartbeat_at ?? null,
+          stage: data.stage ?? null,
         });
 
         const log = data.log ?? [];
+        const logDelta = data.log_delta ?? null;
         const serverCursor = data.cursor ?? 0;
 
-        if (log.length > 0) {
+        // Path A — cursor-precise delta. Avoids the visual "revert to gist"
+        // because we never replace lines we already showed; we only append
+        // exactly the lines past our cursor.
+        if (
+          logDelta &&
+          logDelta.lines.length > 0 &&
+          logDelta.from <= cursorRef.current &&
+          logDelta.to > cursorRef.current
+        ) {
+          const skipFront = cursorRef.current - logDelta.from;
+          const newLines = logDelta.lines.slice(skipFront);
+          if (newLines.length > 0) {
+            setLines((prev) => [...prev, ...newLines].slice(-500));
+            prevTailRef.current = newLines[newLines.length - 1];
+          }
+          cursorRef.current = logDelta.to;
+        } else if (log.length > 0) {
+          // Path B — snapshot fallback. Used on the very first poll, after
+          // session reset, and against older back-ends that don't emit a delta.
           const prevTail = prevTailRef.current;
           let newLines: string[];
 
           if (!prevTail) {
             newLines = log;
           } else if (serverCursor > cursorRef.current) {
-            // New backend: cursor is absolute total — slice precisely
             const windowStart = serverCursor - log.length;
             newLines = log.slice(Math.max(0, cursorRef.current - windowStart));
           } else {
-            // Old backend or stalled cursor: detect via tail content
             const prevIdx = log.lastIndexOf(prevTail);
             newLines = prevIdx === -1 ? log : log.slice(prevIdx + 1);
           }
@@ -330,7 +438,36 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
     poll();
     const id = setInterval(poll, 3000);
     return () => clearInterval(id);
-  }, [gist_id]);
+  }, [gist_id, handleSessionId]);
+
+  const handleClear = async () => {
+    if (clearing) return;
+    setClearing(true);
+    // Optimistic local clear so the panel feels instant; the truncate of
+    // server.log on disk happens via direct call (or Gist fallback).
+    setLines([]);
+    cursorRef.current = 0;
+    prevTailRef.current = "";
+    clearedAtRef.current = Date.now();
+    try {
+      const canDirect = sseActiveRef.current && !!controlUrl;
+      if (canDirect) {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (cmdSecretRef.current) headers["X-Minehost-Secret"] = cmdSecretRef.current;
+        const r = await fetch(`${controlUrl}/logs/clear`, { method: "POST", headers });
+        if (r.ok) return;
+      }
+      if (gist_id) {
+        await fetch(`/api/minehost/server?gist_id=${gist_id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: "__minehost_clear_logs__" }),
+        });
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const sendCommand = async () => {
     const canSendDirect = sseActiveRef.current && !!controlUrl;
@@ -364,17 +501,63 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
     if (e.key === "Enter") sendCommand();
   };
 
-  const canInput = sseActive ? !!controlUrl : !!gist_id;
+  // Servidor MC parado quando temos conexão com o control-server (estamos
+  // recebendo /status), mas o servidor não está rodando e não há um stage
+  // de startup em andamento. Aí não faz sentido mostrar console nem aceitar
+  // comandos (eles seriam silenciosamente perdidos pela tmux session morta).
+  const mcStopped = connected && !running && !stage;
+  const canInput = !mcStopped && (sseActive ? !!controlUrl : !!gist_id);
+
+  // Tri-state connection badge (issue #2).
+  //   live      — SSE channel up, sub-second log streaming.
+  //   syncing   — SSE down, Gist polling working with ~5 s lag.
+  //   offline   — both transports failing AND we'd previously seen one work.
+  //   idle      — first load, neither has reported success yet.
+  const connectionState: "live" | "syncing" | "offline" | "idle" =
+    sseActive ? "live"
+    : connected ? "syncing"
+    : everConnectedRef.current ? "offline"
+    : "idle";
+
+  const badgeTextClass =
+    connectionState === "live" ? "text-emerald-400"
+    : connectionState === "syncing" ? "text-amber-400"
+    : connectionState === "offline" ? "text-red-400"
+    : "text-paper/30";
+
+  const badgeDotClass =
+    connectionState === "live" ? "bg-emerald-400"
+    : connectionState === "syncing" ? "bg-amber-400 animate-pulse"
+    : connectionState === "offline" ? "bg-red-400"
+    : "bg-paper/20";
+
+  const badgeLabel =
+    connectionState === "live" ? "ao vivo"
+    : connectionState === "syncing" ? "sincronizando…"
+    : connectionState === "offline" ? "offline"
+    : (gist_id || controlUrl) ? "aguardando servidor…" : "sem conexão";
 
   return (
     <div className="flex flex-col h-full bg-ink-surface border border-ink-border rounded-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-ink-border shrink-0">
         <span className="text-xs font-mono text-paper/40 uppercase tracking-widest">Console</span>
-        <span className={cn("flex items-center gap-1.5 text-xs font-mono", connected ? "text-emerald-400" : "text-paper/30")}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-emerald-400" : "bg-paper/20")} />
-          {connected ? (sseActive ? "SSE" : "Gist") : (gist_id || controlUrl) ? "aguardando servidor..." : "sem conexão"}
-        </span>
+        <div className="flex items-center gap-3">
+          {(connected || gist_id) && (
+            <button
+              onClick={handleClear}
+              disabled={clearing}
+              className="text-xs font-mono text-paper/30 hover:text-gold disabled:opacity-30 transition-colors duration-150"
+              title="limpa o console e trunca server.log"
+            >
+              {clearing ? "limpando..." : "limpar"}
+            </button>
+          )}
+          <span className={cn("flex items-center gap-1.5 text-xs font-mono", badgeTextClass)}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", badgeDotClass)} />
+            {badgeLabel}
+          </span>
+        </div>
       </div>
 
       {/* Log output */}
@@ -384,12 +567,27 @@ export function ConsolePanel({ codespace, gist_id, controlUrl, onStatusUpdate }:
         className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5 min-h-0"
         style={{ fontFamily: "var(--font-jetbrains)", fontSize: "0.72rem", lineHeight: "1.6" }}
       >
-        {lines.length === 0 ? (
-          connected
-            ? <StartupStages stage={stage} elapsed={elapsedSec} />
-            : <p className="text-paper/20 font-mono text-xs">
-                {(gist_id || controlUrl) ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
-              </p>
+        {mcStopped ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div className="space-y-2">
+              <p className="text-sm font-mono text-paper/50">servidor MC parado</p>
+              <p className="text-xs font-mono text-paper/30">clique em &quot;iniciar&quot; no painel ao lado para subir o servidor</p>
+            </div>
+          </div>
+        ) : lines.length === 0 ? (
+          connected ? (
+            // Só mostra os stages de startup quando o backend reportou estágio
+            // explícito (deps/download/install/starting). Sem isso, o painel
+            // vazio é só "nada por aqui ainda" — caso típico após clicar
+            // "limpar" em um servidor que já estava rodando.
+            stage
+              ? <StartupStages stage={stage} elapsed={elapsedSec} />
+              : <p className="text-paper/20 font-mono text-xs">nada por aqui ainda</p>
+          ) : (
+            <p className="text-paper/20 font-mono text-xs">
+              {(gist_id || controlUrl) ? "Aguardando conexão com o servidor..." : "Sem conexão com o servidor."}
+            </p>
+          )
         ) : (
           lines.map((line, i) => (
             <p key={i} className={cn("whitespace-pre-wrap break-all", colorLine(line))}>

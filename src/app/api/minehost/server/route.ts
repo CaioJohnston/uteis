@@ -55,6 +55,12 @@ export async function GET(req: NextRequest) {
       stage: (state.stage as string | null) ?? null,
       log: state.log ?? [],
       cursor: state.cursor ?? 0,
+      // Forwarded for the anti-revert logic in ConsolePanel: lets the client
+      // distinguish a continuing session (append by cursor) from a fresh one
+      // (clear + replay) and apply incremental deltas instead of the snapshot.
+      log_delta: state.log_delta ?? null,
+      session_id: (state.session_id as string | null) ?? null,
+      last_heartbeat_at: (state.last_heartbeat_at as number | undefined) ?? null,
       updated: state.updated ?? 0,
       server_ip: state.server_ip ?? null,
       playit_claim: (state.playit_claim as string | null) ?? null,
