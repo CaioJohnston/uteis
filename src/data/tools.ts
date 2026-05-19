@@ -7,6 +7,59 @@ import type { Tool } from "@/types";
 
 export const tools: Tool[] = [
   {
+    id: "10",
+    slug: "mcpaint",
+    name: "MC Paint",
+    description:
+      "Recolore texturas de minério do Minecraft no browser. Live preview, download PNG, histórico local.",
+    longDescription: `**MC Paint** porta o algoritmo de recolor HSV do gerador de texturas para o browser — sem instalação, sem servidor.
+
+**Como funciona:**
+1. Escolha um template (normal, deepslate ou clássico 1.7)
+2. Selecione a cor alvo com o color picker ou via hex/RGB
+3. Ajuste o threshold de luminância para controlar quanto da pedra base é preservado
+4. Baixe o PNG gerado — 256×256, pixel-perfect
+
+**Técnica:**
+- Pixels escuros (minério) são recoloridos para o matiz e saturação alvo, preservando a luminância percebida
+- Pixels claros (pedra) ficam intactos, mantendo a textura original de fundo
+- Suporta upload de templates customizados (qualquer PNG)
+
+**Histórico local:** as últimas 10 texturas geradas ficam salvas no browser para restauração rápida.
+
+**Privacidade:** tudo roda no browser — nenhuma imagem é enviada a servidor algum.`,
+    tags: ["gaming", "utilidades"],
+    status: "experimental",
+    visibility: "public",
+    hostingMode: "embedded",
+    href: "/tools/mcpaint/usar",
+    githubUrl: "https://github.com/CaioJohnston/uteis",
+    featured: false,
+    createdAt: "2026-05-18",
+    i18n: {
+      en: {
+        description:
+          "Recolor Minecraft ore textures in the browser. Live preview, PNG download, local history.",
+        longDescription: `**MC Paint** ports the HSV recolor algorithm from a CLI texture generator to the browser — no install, no server.
+
+**How it works:**
+1. Pick a template (modern, deepslate, or classic 1.7)
+2. Choose the target color via color picker or hex/RGB input
+3. Adjust the luminance threshold to control how much of the stone base is preserved
+4. Download the generated PNG — 256×256, pixel-perfect
+
+**Technique:**
+- Dark pixels (ore) are recolored to the target hue and saturation while preserving perceived luminance
+- Light pixels (stone) remain unchanged, keeping the original background texture intact
+- Supports custom template upload (any PNG)
+
+**Local history:** the last 10 generated textures are saved in the browser for quick restoration.
+
+**Privacy:** everything runs in the browser — no images are sent to any server.`,
+      },
+    },
+  },
+  {
     id: "9",
     slug: "minehost",
     name: "Git-Craft",
